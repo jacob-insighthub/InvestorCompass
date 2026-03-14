@@ -1,0 +1,2075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Investor Compass — Research Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Josefin+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:         #090f1a;
+    --navy-mid:     #101c2e;
+    --navy-light:   #182640;
+    --iron:         #8fa8b8;
+    --iron-light:   #b8cdd8;
+    --iron-bright:  #d8e5ec;
+    --iron-dim:     #5c7a8a;
+    --iron-subtle:  rgba(143,168,184,0.12);
+    --cream:        #e8e2d8;
+    --cream-dim:    #a8a098;
+    --border:       rgba(143,168,184,0.18);
+    --border-strong:rgba(143,168,184,0.40);
+    --card-bg:      rgba(16,28,46,0.90);
+    --success:      #3d9e6a;
+    --error:        #b04040;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html { scroll-behavior:smooth; }
+  body {
+    background:var(--navy); color:var(--cream);
+    font-family:'EB Garamond',Georgia,serif;
+    min-height:100vh; overflow-x:hidden;
+  }
+  body::before {
+    content:''; position:fixed; inset:0; z-index:0;
+    background:
+      radial-gradient(ellipse 90% 60% at 15% 10%,rgba(24,38,64,0.8) 0%,transparent 55%),
+      radial-gradient(ellipse 60% 40% at 85% 90%,rgba(143,168,184,0.04) 0%,transparent 50%),
+      repeating-linear-gradient(0deg,transparent,transparent 100px,rgba(143,168,184,0.012) 100px,rgba(143,168,184,0.012) 101px),
+      repeating-linear-gradient(90deg,transparent,transparent 100px,rgba(143,168,184,0.012) 100px,rgba(143,168,184,0.012) 101px);
+    pointer-events:none;
+  }
+  #app { position:relative; z-index:1; }
+
+  /* HEADER */
+  header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:24px 52px; border-bottom:1px solid var(--border);
+    background:rgba(9,15,26,0.96); backdrop-filter:blur(16px);
+    position:sticky; top:0; z-index:200; gap:16px; flex-wrap:wrap;
+  }
+  .logo { display:flex; align-items:baseline; gap:12px; text-decoration:none; }
+  .logo-mark { font-family:'Playfair Display',serif; font-size:20px; font-weight:700; color:var(--iron-light); letter-spacing:1px; }
+  .logo-mark span { color:var(--iron); }
+  .logo-sub { font-family:'Josefin Sans',sans-serif; font-size:9px; letter-spacing:4px; color:var(--cream-dim); text-transform:uppercase; font-weight:300; }
+  .header-actions { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+
+  /* Auth area in header */
+  #authArea { display:flex; align-items:center; gap:10px; }
+  .auth-status {
+    font-family:'Josefin Sans',sans-serif; font-size:10px; letter-spacing:2px;
+    text-transform:uppercase; color:var(--cream-dim);
+    display:flex; align-items:center; gap:6px;
+  }
+  .auth-dot { width:6px; height:6px; border-radius:50%; background:var(--cream-dim); }
+  .auth-dot.connected { background:var(--success); }
+
+  #saveStatus {
+    font-family:'Josefin Sans',sans-serif; font-size:10px; letter-spacing:2px;
+    color:var(--cream-dim); text-transform:uppercase;
+    display:flex; align-items:center; gap:6px; opacity:0; transition:opacity 0.4s;
+  }
+  #saveStatus.visible { opacity:1; }
+  #saveStatus.saved { color:var(--success); }
+  #saveStatus.error { color:var(--error); }
+  #saveStatus::before { content:'●'; font-size:8px; }
+
+  .btn-icon {
+    background:transparent; border:1px solid var(--border);
+    color:var(--cream-dim); font-family:'Josefin Sans',sans-serif;
+    font-size:10px; letter-spacing:2px; text-transform:uppercase;
+    padding:8px 16px; cursor:pointer; border-radius:1px; transition:all 0.2s;
+    white-space:nowrap;
+  }
+  .btn-icon:hover { border-color:var(--iron); color:var(--iron-light); }
+
+  /* SETTINGS OVERLAY */
+  #settingsOverlay {
+    display:none; position:fixed; inset:0; z-index:500;
+    background:rgba(9,15,26,0.7); backdrop-filter:blur(4px);
+  }
+  #settingsOverlay.open { display:flex; align-items:flex-start; justify-content:flex-end; }
+  #settingsPanel {
+    background:var(--navy-mid); border-left:1px solid var(--border);
+    width:460px; max-width:95vw; height:100vh;
+    padding:40px 36px; overflow-y:auto;
+    animation:slideIn 0.25s ease;
+  }
+  @keyframes slideIn { from{transform:translateX(40px);opacity:0} to{transform:translateX(0);opacity:1} }
+  .settings-title { font-family:'Playfair Display',serif; font-size:22px; color:var(--cream); margin-bottom:8px; }
+  .settings-sub { font-size:14px; color:var(--cream-dim); font-style:italic; margin-bottom:32px; line-height:1.6; }
+  .settings-section { margin-bottom:28px; padding-bottom:28px; border-bottom:1px solid var(--border); }
+  .settings-section:last-of-type { border-bottom:none; }
+  .settings-label { font-family:'Josefin Sans',sans-serif; font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--iron); display:block; margin-bottom:10px; }
+  .settings-note { font-size:13px; color:var(--cream-dim); line-height:1.6; margin-bottom:12px; }
+  .field-input {
+    width:100%; background:rgba(9,15,26,0.8); border:1px solid var(--border-strong);
+    color:var(--cream); font-family:'Josefin Sans',sans-serif; font-size:12px;
+    letter-spacing:1px; padding:12px 16px; outline:none; border-radius:1px; transition:border-color 0.2s;
+  }
+  .field-input:focus { border-color:var(--iron); }
+  .field-input::placeholder { color:rgba(168,160,152,0.4); font-size:11px; }
+  .api-key-row { display:flex; gap:8px; margin-bottom:8px; }
+  .api-key-row .field-input { flex:1; }
+  .status-line { font-family:'Josefin Sans',sans-serif; font-size:10px; letter-spacing:1px; margin-top:8px; min-height:16px; color:var(--cream-dim); }
+  .status-line.ok { color:var(--success); }
+  .status-line.err { color:var(--error); }
+  .info-box {
+    background:rgba(143,168,184,0.06); border:1px solid var(--border);
+    padding:14px 16px; margin-top:14px; border-radius:1px;
+    font-size:13px; color:var(--cream-dim); line-height:1.6;
+  }
+  .info-box strong { color:var(--iron-light); font-weight:normal; font-style:italic; }
+  .info-box a { color:var(--iron); }
+
+  /* Google sign-in button (visual only in downloaded file) */
+  .google-btn {
+    display:flex; align-items:center; gap:10px; width:100%;
+    background:rgba(255,255,255,0.05); border:1px solid var(--border-strong);
+    color:var(--cream); font-family:'Josefin Sans',sans-serif;
+    font-size:11px; letter-spacing:2px; text-transform:uppercase;
+    padding:13px 20px; cursor:pointer; border-radius:1px; transition:all 0.2s;
+    margin-bottom:10px;
+  }
+  .google-btn:hover { border-color:var(--iron); background:rgba(143,168,184,0.08); }
+  .google-icon { width:16px; height:16px; flex-shrink:0; }
+
+  .settings-close-btn {
+    display:block; width:100%; margin-top:24px;
+    background:transparent; border:1px solid var(--border-strong);
+    color:var(--cream-dim); font-family:'Josefin Sans',sans-serif;
+    font-size:11px; letter-spacing:3px; text-transform:uppercase;
+    padding:14px; cursor:pointer; border-radius:1px; transition:all 0.2s;
+  }
+  .settings-close-btn:hover { border-color:var(--iron); color:var(--iron-light); }
+  .danger-btn {
+    display:block; width:100%; margin-top:8px;
+    background:transparent; border:1px solid rgba(176,64,64,0.3);
+    color:rgba(176,64,64,0.6); font-family:'Josefin Sans',sans-serif;
+    font-size:10px; letter-spacing:3px; text-transform:uppercase;
+    padding:11px; cursor:pointer; border-radius:1px; transition:all 0.2s;
+  }
+  .danger-btn:hover { border-color:var(--error); color:var(--error); }
+
+  /* HERO */
+  .hero { padding:72px 52px 56px; max-width:860px; }
+  .eyebrow {
+    font-family:'Josefin Sans',sans-serif; font-size:10px; letter-spacing:5px;
+    color:var(--iron); text-transform:uppercase; margin-bottom:20px;
+    display:flex; align-items:center; gap:14px;
+  }
+  .eyebrow::before { content:''; display:inline-block; width:36px; height:1px; background:linear-gradient(90deg,transparent,var(--iron)); }
+  h1 { font-family:'Playfair Display',serif; font-size:clamp(34px,4.5vw,54px); font-weight:600; line-height:1.15; color:var(--cream); margin-bottom:22px; }
+  h1 em { font-style:italic; color:var(--iron-light); }
+  .hero-sub { font-size:18px; color:var(--cream-dim); line-height:1.75; max-width:600px; }
+
+  /* RESTORED BANNER */
+  #restoredBanner {
+    margin:0 52px 8px; background:rgba(61,158,106,0.08);
+    border:1px solid rgba(61,158,106,0.25); padding:12px 24px; border-radius:1px;
+    font-family:'Josefin Sans',sans-serif; font-size:10px; letter-spacing:2px;
+    text-transform:uppercase; color:var(--success);
+    display:flex; align-items:center; gap:10px;
+  }
+  #restoredBanner.hidden { display:none; }
+
+  #fileProtocolBanner {
+    margin:0 52px 8px; background:rgba(176,122,58,0.1);
+    border:1px solid rgba(176,122,58,0.35); padding:12px 24px; border-radius:1px;
+    font-family:'Josefin Sans',sans-serif; font-size:10px; letter-spacing:2px;
+    text-transform:uppercase; color:#c8923a;
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  }
+  #fileProtocolBanner.hidden { display:none; }
+  #localServerModal.hidden { display:none !important; }
+  @media(max-width:768px){ #fileProtocolBanner{ margin:0 20px 8px; } }
+
+  /* SEARCH BAR */
+  .search-section { padding:24px 52px 0; max-width:900px; }
+  .search-wrap { position:relative; }
+  .search-input {
+    width:100%; background:rgba(16,28,46,0.95); border:1px solid var(--border-strong);
+    color:var(--cream); font-family:'Josefin Sans',sans-serif;
+    font-size:14px; letter-spacing:3px; text-transform:uppercase;
+    padding:16px 56px 16px 20px; outline:none; border-radius:1px; transition:border-color 0.2s;
+  }
+  .search-input:focus { border-color:var(--iron); }
+  .search-input::placeholder { text-transform:none; letter-spacing:1px; font-size:12px; color:rgba(168,160,152,0.35); }
+  .search-count { position:absolute; right:16px; top:50%; transform:translateY(-50%); font-family:'Josefin Sans',sans-serif; font-size:9px; letter-spacing:2px; color:var(--iron-dim); text-transform:uppercase; }
+  #searchDropdown {
+    position:absolute; top:calc(100% + 2px); left:0; right:0; z-index:100;
+    background:var(--navy-mid); border:1px solid var(--border-strong);
+    border-radius:1px; max-height:280px; overflow-y:auto; display:none;
+  }
+  #searchDropdown.open { display:block; }
+  .search-result {
+    padding:10px 20px; cursor:pointer; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:14px; transition:background 0.1s;
+  }
+  .search-result:last-child { border-bottom:none; }
+  .search-result:hover { background:var(--iron-subtle); }
+  .sr-ticker { font-family:'Josefin Sans',sans-serif; font-size:12px; letter-spacing:2px; color:var(--iron-light); min-width:60px; }
+  .sr-name { font-family:'EB Garamond',serif; font-size:15px; color:var(--cream); flex:1; }
+  .sr-type { font-family:'Josefin Sans',sans-serif; font-size:9px; letter-spacing:1px; color:var(--cream-dim); text-transform:uppercase; }
+
+  /* INPUT SECTION */
+  .input-section { padding:20px 52px 40px; max-width:1120px; }
+  .input-card { background:var(--card-bg); border:1px solid var(--border); border-radius:2px; padding:36px 44px; backdrop-filter:blur(10px); }
+  .input-label { font-family:'Josefin Sans',sans-serif; font-size:10px; letter-spacing:3px; color:var(--iron); text-transform:uppercase; margin-bottom:14px; display:block; }
+  .ticker-tags { display:flex; flex-wrap:wrap; gap:8px; min-height:34px; margin-bottom:20px; }
+  .ticker-tag {
+    display:flex; align-items:center; gap:8px;
+    background:rgba(143,168,184,0.09); border:1px solid var(--border-strong);
+    padding:5px 14px; border-radius:1px; font-family:'Josefin Sans',sans-serif;
+    font-size:11px; letter-spacing:2px; color:var(--iron-light);
+  }
+  .ticker-tag .remove { cursor:pointer; opacity:0.4; font-size:13px; line-height:1; transition:opacity 0.2s; }
+  .ticker-tag .remove:hover { opacity:1; }
+  .divider-row { display:flex; align-items:center; gap:16px; margin-bottom:18px; color:var(--cream-dim); font-family:'Josefin Sans',sans-serif; font-size:10px; letter-spacing:2px; text-transform:uppercase; }
+  .divider-row::before,.divider-row::after { content:''; flex:1; height:1px; background:var(--border); }
+  .preset-label { font-family:'Josefin Sans',sans-serif; font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--iron-dim); margin-bottom:10px; display:block; }
+  .preset-grid { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:16px; }
+  .preset-btn {
+    background:transparent; border:1px solid var(--border); color:var(--cream-dim);
+    font-family:'Josefin Sans',sans-serif; font-size:10px; letter-spacing:2px;
+    padding:7px 14px; cursor:pointer; border-radius:1px; transition:all 0.2s;
+  }
+  .preset-btn:hover { border-color:var(--iron-dim); color:var(--iron-light); background:var(--iron-subtle); }
+  .btn-primary {
+    background:var(--iron); color:var(--navy); border:none;
+    font-family:'Josefin Sans',sans-serif; font-size:11px; letter-spacing:3px;
+    text-transform:uppercase; font-weight:600; padding:14px 40px; cursor:pointer;
+    border-radius:1px; transition:background 0.2s,transform 0.1s; white-space:nowrap;
+  }
+  .btn-primary:hover { background:var(--iron-light); }
+  .btn-primary:active { transform:scale(0.98); }
+  .btn-secondary {
+    background:transparent; color:var(--cream-dim); border:1px solid var(--border-strong);
+    font-family:'Josefin Sans',sans-serif; font-size:10px; letter-spacing:2px;
+    text-transform:uppercase; padding:14px 24px; cursor:pointer; border-radius:1px; transition:all 0.2s; white-space:nowrap;
+  }
+  .btn-secondary:hover { border-color:var(--iron); color:var(--iron-light); }
+  .action-row { margin-top:28px; display:flex; gap:10px; flex-wrap:wrap; }
+
+  /* LOADING */
+  #loading { display:none; padding:48px 52px; font-family:'Josefin Sans',sans-serif; font-size:11px; letter-spacing:4px; text-transform:uppercase; color:var(--iron-dim); animation:pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:0.3} 50%{opacity:1} }
+  #loadingDetail { font-family:'EB Garamond',serif; font-style:italic; font-size:15px; color:var(--cream-dim); letter-spacing:0; margin-top:6px; text-transform:none; }
+
+  /* RESULTS */
+  #results { display:none; padding:0 52px 80px; max-width:1400px; animation:fadeUp 0.45s ease forwards; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  .results-header { padding:44px 0 28px; border-bottom:1px solid var(--border); margin-bottom:36px; display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:16px; }
+  .results-title { font-family:'Playfair Display',serif; font-size:26px; font-weight:600; color:var(--cream); }
+  .results-meta { font-family:'Josefin Sans',sans-serif; font-size:10px; letter-spacing:2px; color:var(--cream-dim); text-transform:uppercase; }
+  .ai-badge { display:inline-flex; align-items:center; gap:6px; background:rgba(143,168,184,0.1); border:1px solid var(--border); padding:3px 9px; border-radius:1px; font-family:'Josefin Sans',sans-serif; font-size:8px; letter-spacing:2px; text-transform:uppercase; color:var(--iron); }
+  .ai-badge::before { content:'◈'; font-size:9px; }
+  .universal-section { margin-bottom:52px; padding:32px 36px; background:var(--card-bg); border:1px solid var(--border); border-radius:2px; backdrop-filter:blur(8px); }
+  .universal-section h3 { font-family:'Playfair Display',serif; font-size:19px; color:var(--cream); margin-bottom:4px; }
+  .universal-section p { font-size:14px; color:var(--cream-dim); font-style:italic; margin-bottom:20px; }
+  .holding-block { margin-bottom:52px; }
+  .holding-header { display:flex; align-items:center; gap:18px; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+  .ticker-badge { font-family:'Josefin Sans',sans-serif; font-size:16px; font-weight:600; letter-spacing:3px; color:var(--navy); background:var(--iron); padding:5px 14px; border-radius:1px; white-space:nowrap; }
+  .holding-name { font-family:'Playfair Display',serif; font-size:20px; color:var(--cream); }
+  .holding-meta { margin-left:auto; text-align:right; }
+  .holding-type { font-family:'Josefin Sans',sans-serif; font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--iron-dim); }
+  .holding-sector { font-family:'EB Garamond',serif; font-size:13px; color:var(--cream-dim); font-style:italic; }
+  .source-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; }
+  .source-category { background:var(--card-bg); border:1px solid var(--border); border-radius:2px; overflow:hidden; backdrop-filter:blur(8px); transition:border-color 0.2s; }
+  .source-category:hover { border-color:var(--border-strong); }
+  .source-category.ai-gen { border-color:rgba(143,168,184,0.28); }
+  .category-header { padding:12px 18px; background:rgba(143,168,184,0.05); border-bottom:1px solid var(--border); display:flex; align-items:center; gap:9px; }
+  .category-icon { font-size:14px; }
+  .category-name { font-family:'Josefin Sans',sans-serif; font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--iron); font-weight:600; }
+  .source-list { padding:12px 0; }
+  .source-item { display:block; padding:9px 18px; text-decoration:none; border-bottom:1px solid rgba(143,168,184,0.06); transition:background 0.15s; }
+  .source-item:last-child { border-bottom:none; }
+  .source-item:hover { background:rgba(143,168,184,0.06); }
+  .source-name { font-family:'EB Garamond',serif; font-size:15px; color:var(--cream); display:block; margin-bottom:2px; transition:color 0.15s; }
+  .source-item:hover .source-name { color:var(--iron-light); }
+  .source-desc { font-family:'Josefin Sans',sans-serif; font-size:9px; letter-spacing:1px; color:var(--cream-dim); opacity:0.6; text-transform:uppercase; }
+  .source-tag { display:inline-block; font-family:'Josefin Sans',sans-serif; font-size:8px; letter-spacing:1px; text-transform:uppercase; padding:2px 6px; border-radius:1px; margin-left:8px; vertical-align:middle; }
+  .tag-free    { background:rgba(61,158,106,0.15); color:#4abe87; border:1px solid rgba(61,158,106,0.35); }
+  .tag-premium { background:rgba(143,168,184,0.1); color:var(--iron); border:1px solid var(--border); }
+  .tag-official{ background:rgba(24,38,64,0.6); color:#8ab2d4; border:1px solid rgba(138,178,212,0.25); }
+  .not-found { padding:16px 18px; font-family:'EB Garamond',serif; font-style:italic; color:var(--cream-dim); opacity:0.45; font-size:14px; }
+
+  /* FOOTER */
+  footer { border-top:1px solid var(--border); padding:28px 52px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; }
+  .footer-left { font-family:'Josefin Sans',sans-serif; font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--cream-dim); opacity:0.4; }
+  .disclaimer { font-family:'EB Garamond',serif; font-size:12px; color:var(--cream-dim); opacity:0.35; font-style:italic; max-width:480px; text-align:right; }
+
+  /* TOAST */
+  #toast { position:fixed; bottom:32px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--navy-mid); border:1px solid var(--border-strong); color:var(--cream); font-family:'Josefin Sans',sans-serif; font-size:10px; letter-spacing:2px; text-transform:uppercase; padding:12px 28px; border-radius:1px; z-index:999; opacity:0; transition:opacity 0.3s,transform 0.3s; pointer-events:none; white-space:nowrap; }
+  #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  #toast.success { border-color:rgba(61,158,106,0.5); color:#4abe87; }
+  #toast.error { border-color:rgba(176,64,64,0.5); color:#e07070; }
+
+  @media(max-width:768px){
+    header,.hero,.search-section,.input-section,#results { padding-left:20px; padding-right:20px; }
+    footer { padding:20px; flex-direction:column; text-align:center; }
+    .disclaimer { text-align:center; }
+    .input-card { padding:24px 20px; }
+    .source-grid { grid-template-columns:1fr; }
+    #settingsPanel { width:100vw; }
+    #restoredBanner { margin:0 20px 8px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- SETTINGS OVERLAY -->
+<div id="settingsOverlay" onclick="closeSettingsOnOverlay(event)">
+  <div id="settingsPanel">
+    <div class="settings-title">Settings & Account</div>
+    <div class="settings-sub">Configure your account, AI assistance, and portfolio data.</div>
+
+    <!-- GOOGLE SIGN IN -->
+    <div class="settings-section">
+      <label class="settings-label">Account — Sign In</label>
+      <p class="settings-note">Sign in to sync your portfolio across devices and unlock AI source generation. Available when the app is hosted online.</p>
+      <button class="google-btn" onclick="handleGoogleSignIn()">
+        <svg class="google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Sign in with Google
+      </button>
+      <div id="googleStatus" class="status-line"></div>
+      <div class="info-box">
+        <strong>Note:</strong> Google Sign-In requires the app to be hosted at a public URL.
+        When running from a downloaded file, use the Gemini API key below instead.
+        Your developer can enable this — see the setup guide.
+      </div>
+    </div>
+
+    <!-- GEMINI API KEY -->
+    <div class="settings-section">
+      <label class="settings-label">AI Source Generation — Gemini (Free)</label>
+      <p class="settings-note">
+        For any ticker not in our database, the app uses Google's Gemini AI to research the best sources.
+        The free tier requires no payment — just a Google account.
+      </p>
+      <div class="info-box" style="margin-bottom:14px;">
+        <strong>How to get your free key (2 minutes):</strong><br><br>
+        1. Go to <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a><br>
+        2. Sign in with your Google account<br>
+        3. Click "Create API Key"<br>
+        4. Copy and paste it below<br><br>
+        <strong>Free tier:</strong> 250 lookups/day — more than enough for personal use. No credit card needed.
+      </div>
+      <div class="api-key-row">
+        <input class="field-input" id="geminiKeyInput" type="password" placeholder="AIza...">
+        <button class="btn-primary" onclick="saveGeminiKey()" style="padding:12px 18px;font-size:10px;">Save</button>
+      </div>
+      <div id="geminiKeyStatus" class="status-line"></div>
+    </div>
+
+    <!-- PORTFOLIO DATA -->
+    <div class="settings-section">
+      <label class="settings-label">Portfolio Data</label>
+      <p class="settings-note">Your portfolio saves automatically to this browser whenever you make changes.</p>
+      <div id="savedPortfolioInfo" style="font-family:'Josefin Sans',sans-serif;font-size:10px;letter-spacing:1px;color:var(--cream-dim);"></div>
+    </div>
+
+    <button class="settings-close-btn" onclick="closeSettings()">Close Settings</button>
+    <button class="danger-btn" onclick="clearGeminiKey()">Remove Gemini API Key</button>
+    <button class="danger-btn" onclick="clearSavedPortfolio()">Clear Saved Portfolio</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <a class="logo" href="#">
+    <span class="logo-mark">⬡ INVESTOR <span>COMPASS</span></span>
+    <span class="logo-sub">Research Intelligence</span>
+  </a>
+  <div class="header-actions">
+    <div id="authArea">
+      <div class="auth-status">
+        <div class="auth-dot" id="authDot"></div>
+        <span id="authLabel">Not signed in</span>
+      </div>
+    </div>
+    <div id="saveStatus">Portfolio Saved</div>
+    <button class="btn-icon" onclick="openSettings()">⚙ Settings</button>
+  </div>
+</header>
+
+<!-- RESTORED BANNER -->
+<div id="restoredBanner" class="hidden">✓ &nbsp; Portfolio restored from last session</div>
+
+<!-- FILE:// WARNING BANNER -->
+<div id="fileProtocolBanner" class="hidden">
+  ⚠ &nbsp; You are running this file locally — Gemini AI lookups are disabled by the browser.
+  &nbsp;<strong>Host on Netlify</strong> for full functionality, or run a local server for testing.
+  &nbsp;<button onclick="document.getElementById('localServerModal').classList.remove('hidden')" style="background:var(--iron);color:var(--navy);border:none;font-family:'Josefin Sans',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:4px 10px;cursor:pointer;border-radius:1px;">How to fix</button>
+  &nbsp;<button onclick="document.getElementById('fileProtocolBanner').classList.add('hidden')" style="background:transparent;color:var(--cream-dim);border:none;cursor:pointer;font-size:14px;opacity:0.5;">✕</button>
+</div>
+
+<!-- LOCAL SERVER MODAL -->
+<div id="localServerModal" class="hidden" style="position:fixed;inset:0;z-index:600;background:rgba(9,15,26,0.85);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--navy-mid);border:1px solid var(--border-strong);max-width:600px;width:100%;padding:40px;border-radius:2px;max-height:90vh;overflow-y:auto;">
+
+    <div style="font-family:'Playfair Display',serif;font-size:22px;color:var(--cream);margin-bottom:6px;">Enable AI Source Lookup</div>
+    <div style="font-family:'EB Garamond',serif;font-size:15px;color:var(--cream-dim);font-style:italic;margin-bottom:28px;line-height:1.6;">
+      Browsers block API calls from locally-opened files. The fastest fix is GitHub Pages — free hosting that takes 5 minutes and needs no coding skills.
+    </div>
+
+    <!-- OPTION 1 — GitHub Pages -->
+    <div style="background:rgba(61,158,106,0.08);border:1px solid rgba(61,158,106,0.25);padding:20px 24px;border-radius:1px;margin-bottom:20px;">
+      <div style="font-family:'Josefin Sans',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#4abe87;margin-bottom:12px;">⭐ Best Option — GitHub Pages (Free, 5 minutes, no coding)</div>
+      <div style="font-family:'EB Garamond',serif;font-size:15px;color:var(--cream);line-height:1.8;">
+        1. Create a free account at <strong>github.com</strong><br>
+        2. Click <strong>+ → New repository</strong> → name it <strong>investor-compass</strong> → Create<br>
+        3. Click <strong>"uploading an existing file"</strong> → drag in the HTML file → <strong>Commit changes</strong><br>
+        4. Go to <strong>Settings → Pages</strong> → set Branch to <strong>main</strong> → Save<br>
+        5. Wait 60 seconds → your app is live at:<br>
+        <div style="margin-top:10px;background:rgba(9,15,26,0.6);padding:10px 14px;font-family:'Courier New',monospace;font-size:13px;color:var(--iron-light);border-radius:1px;">
+          <strong>yourusername.github.io/investor-compass/investor-compass-v3.1.html</strong>
+        </div>
+      </div>
+      <div style="font-family:'Josefin Sans',sans-serif;font-size:10px;letter-spacing:1px;color:#4abe87;margin-top:12px;">
+        ✓ Shareable with anyone &nbsp;·&nbsp; ✓ Gemini AI works immediately &nbsp;·&nbsp; ✓ Free forever &nbsp;·&nbsp; ✓ No developer needed
+      </div>
+    </div>
+
+    <!-- OPTION 2 — Python local server -->
+    <div style="background:rgba(143,168,184,0.06);border:1px solid var(--border);padding:20px 24px;border-radius:1px;margin-bottom:20px;">
+      <div style="font-family:'Josefin Sans',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--iron);margin-bottom:12px;">Option B — Test Locally (your computer only)</div>
+      <div style="font-family:'EB Garamond',serif;font-size:15px;color:var(--cream);line-height:1.8;">
+        1. Open Terminal (Mac) or Command Prompt (Windows)<br>
+        2. Type: <strong>cd </strong> then drag the folder containing this file into the terminal<br>
+        3. Run: &nbsp;<span style="font-family:'Courier New',monospace;background:rgba(9,15,26,0.6);padding:2px 8px;color:var(--iron-light);">python3 -m http.server 8080</span><br>
+        4. Open: &nbsp;<span style="font-family:'Courier New',monospace;background:rgba(9,15,26,0.6);padding:2px 8px;color:var(--iron-light);">http://localhost:8080/investor-compass-v3.1.html</span>
+      </div>
+      <div style="font-family:'Josefin Sans',sans-serif;font-size:10px;letter-spacing:1px;color:var(--cream-dim);margin-top:12px;opacity:0.7;">
+        Works on your machine only — not shareable with friends
+      </div>
+    </div>
+
+    <!-- OPTION 3 — Netlify -->
+    <div style="background:rgba(143,168,184,0.06);border:1px solid var(--border);padding:20px 24px;border-radius:1px;margin-bottom:28px;">
+      <div style="font-family:'Josefin Sans',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--iron);margin-bottom:8px;">Option C — Netlify (Recommended for the full product)</div>
+      <div style="font-family:'EB Garamond',serif;font-size:14px;color:var(--cream-dim);line-height:1.6;">
+        Drag and drop the HTML file at <strong style="color:var(--cream);">netlify.com</strong> for a permanent URL. Enables Google Sign-In and all advanced features. Your developer setup guide covers this in full.
+      </div>
+    </div>
+
+    <button onclick="document.getElementById('localServerModal').classList.add('hidden')" style="background:var(--iron);color:var(--navy);border:none;font-family:'Josefin Sans',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;padding:14px 32px;cursor:pointer;border-radius:1px;width:100%;font-weight:600;">Got It — Close</button>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="eyebrow">Portfolio Research Intelligence</div>
+  <h1>Know your sources.<br><em>Sharpen your edge.</em></h1>
+  <p class="hero-sub">Enter your holdings and receive a curated intelligence brief — official filings, analyst coverage, sector research, and community signals — tailored to your exact portfolio.</p>
+</section>
+
+<!-- SEARCH -->
+<div class="search-section">
+  <div class="search-wrap">
+    <input class="search-input" id="globalSearch" type="text"
+      placeholder="Search 500+ tickers — type a name or symbol and press Enter to add..."
+      autocomplete="off" autocapitalize="characters" spellcheck="false">
+    <span class="search-count" id="dbCount"></span>
+    <div id="searchDropdown"></div>
+  </div>
+</div>
+
+<!-- INPUT -->
+<section class="input-section">
+  <div class="input-card">
+    <label class="input-label">Your Portfolio</label>
+    <div class="ticker-tags" id="tickerTags">
+      <span style="font-family:'Josefin Sans',sans-serif;font-size:10px;letter-spacing:2px;color:var(--cream-dim);opacity:0.5;text-transform:uppercase;align-self:center;">Search above or use presets below to add holdings</span>
+    </div>
+
+    <div class="divider-row">Quick-add from presets</div>
+
+    <span class="preset-label">S&P 500 — Mega Cap</span>
+    <div class="preset-grid">
+      <button class="preset-btn" onclick="addTicker('AAPL')">AAPL</button>
+      <button class="preset-btn" onclick="addTicker('MSFT')">MSFT</button>
+      <button class="preset-btn" onclick="addTicker('NVDA')">NVDA</button>
+      <button class="preset-btn" onclick="addTicker('AMZN')">AMZN</button>
+      <button class="preset-btn" onclick="addTicker('GOOGL')">GOOGL</button>
+      <button class="preset-btn" onclick="addTicker('META')">META</button>
+      <button class="preset-btn" onclick="addTicker('TSLA')">TSLA</button>
+      <button class="preset-btn" onclick="addTicker('BRK.B')">BRK.B</button>
+      <button class="preset-btn" onclick="addTicker('JPM')">JPM</button>
+      <button class="preset-btn" onclick="addTicker('V')">V</button>
+      <button class="preset-btn" onclick="addTicker('WMT')">WMT</button>
+      <button class="preset-btn" onclick="addTicker('XOM')">XOM</button>
+      <button class="preset-btn" onclick="addTicker('JNJ')">JNJ</button>
+      <button class="preset-btn" onclick="addTicker('GS')">GS</button>
+      <button class="preset-btn" onclick="addTicker('NFLX')">NFLX</button>
+    </div>
+
+    <span class="preset-label">Popular ETFs</span>
+    <div class="preset-grid">
+      <button class="preset-btn" onclick="addTicker('SPY')">SPY</button>
+      <button class="preset-btn" onclick="addTicker('QQQ')">QQQ</button>
+      <button class="preset-btn" onclick="addTicker('VTI')">VTI</button>
+      <button class="preset-btn" onclick="addTicker('IWM')">IWM</button>
+      <button class="preset-btn" onclick="addTicker('AGG')">AGG</button>
+      <button class="preset-btn" onclick="addTicker('TLT')">TLT</button>
+      <button class="preset-btn" onclick="addTicker('GLD')">GLD</button>
+      <button class="preset-btn" onclick="addTicker('VNQ')">VNQ</button>
+      <button class="preset-btn" onclick="addTicker('XLE')">XLE</button>
+      <button class="preset-btn" onclick="addTicker('XLK')">XLK</button>
+      <button class="preset-btn" onclick="addTicker('XLF')">XLF</button>
+      <button class="preset-btn" onclick="addTicker('HYG')">HYG</button>
+      <button class="preset-btn" onclick="addTicker('EFA')">EFA</button>
+      <button class="preset-btn" onclick="addTicker('EEM')">EEM</button>
+      <button class="preset-btn" onclick="addTicker('ARKK')">ARKK</button>
+    </div>
+
+    <span class="preset-label">Mid Cap Highlights</span>
+    <div class="preset-grid">
+      <button class="preset-btn" onclick="addTicker('CELH')">CELH</button>
+      <button class="preset-btn" onclick="addTicker('FSLR')">FSLR</button>
+      <button class="preset-btn" onclick="addTicker('NUE')">NUE</button>
+      <button class="preset-btn" onclick="addTicker('DKNG')">DKNG</button>
+      <button class="preset-btn" onclick="addTicker('SNAP')">SNAP</button>
+      <button class="preset-btn" onclick="addTicker('PINS')">PINS</button>
+      <button class="preset-btn" onclick="addTicker('RKT')">RKT</button>
+      <button class="preset-btn" onclick="addTicker('EXAS')">EXAS</button>
+    </div>
+
+    <div class="action-row">
+      <button class="btn-primary" onclick="generateResults()" style="font-size:12px;padding:15px 44px;letter-spacing:4px;">Generate Report</button>
+      <button class="btn-secondary" onclick="loadDemo()">Load Demo Portfolio</button>
+      <button class="btn-secondary" onclick="clearAll()">Clear All</button>
+    </div>
+  </div>
+</section>
+
+<!-- LOADING -->
+<div id="loading">Assembling intelligence brief<div id="loadingDetail"></div></div>
+
+<!-- RESULTS -->
+<section id="results">
+  <div class="results-header">
+    <div>
+      <div class="eyebrow" style="margin-bottom:8px">Portfolio Intelligence Brief</div>
+      <div class="results-title" id="resultsTitle"></div>
+    </div>
+    <div id="resultsMeta" class="results-meta"></div>
+  </div>
+  <div class="universal-section">
+    <h3>Essential Market Intelligence — All Portfolios</h3>
+    <p>Foundational sources relevant regardless of your specific holdings</p>
+    <div class="source-grid" id="universalGrid"></div>
+  </div>
+  <div id="holdingsResults"></div>
+</section>
+
+<footer>
+  <div class="footer-left">Investor Compass v0.3.1 — Prototype</div>
+  <div class="disclaimer">Source suggestions only. Not financial advice. Always verify and consult a qualified adviser before investing.</div>
+</footer>
+
+<div id="toast"></div>
+</div>
+
+<script>
+/* ============================================================
+   STORAGE — Versioned, validated, fully error-handled
+============================================================ */
+const STORAGE = {
+  PORTFOLIO_KEY: 'investorCompass_portfolio_v2',
+  GEMINI_KEY:    'investorCompass_geminikey_v1',
+  USER_KEY:      'investorCompass_user_v1',
+
+  savePortfolio(tickerSet) {
+    try {
+      localStorage.setItem(this.PORTFOLIO_KEY, JSON.stringify({
+        version:2, tickers:Array.from(tickerSet), savedAt:new Date().toISOString()
+      }));
+      return { ok:true };
+    } catch(err) {
+      return { ok:false, reason: err.name==='QuotaExceededError' ? 'Storage quota exceeded.' : 'Storage unavailable.' };
+    }
+  },
+
+  loadPortfolio() {
+    try {
+      const raw = localStorage.getItem(this.PORTFOLIO_KEY);
+      if (!raw) return { ok:false, reason:'no_data' };
+      let p; try { p = JSON.parse(raw); } catch { return { ok:false, reason:'corrupt' }; }
+      if (!p || p.version !== 2 || !Array.isArray(p.tickers)) return { ok:false, reason:'invalid' };
+      const clean = p.tickers.filter(t => typeof t==='string' && t.length>=1 && t.length<=10 && /^[A-Z0-9.]+$/i.test(t)).map(t=>t.toUpperCase());
+      if (!clean.length) return { ok:false, reason:'empty' };
+      return { ok:true, tickers:clean, savedAt:p.savedAt||null };
+    } catch { return { ok:false, reason:'error' }; }
+  },
+
+  saveGeminiKey(k) { try { k ? localStorage.setItem(this.GEMINI_KEY,k) : localStorage.removeItem(this.GEMINI_KEY); return true; } catch { return false; } },
+  loadGeminiKey() { try { return localStorage.getItem(this.GEMINI_KEY)||null; } catch { return null; } },
+  clearPortfolio() { try { localStorage.removeItem(this.PORTFOLIO_KEY); return true; } catch { return false; } },
+  getPortfolioMeta() {
+    const r = this.loadPortfolio();
+    if (!r.ok) return null;
+    return { count:r.tickers.length, savedAt: r.savedAt ? new Date(r.savedAt).toLocaleString() : 'Unknown' };
+  }
+};
+
+/* ============================================================
+   STATE
+============================================================ */
+let activeTickers = new Set();
+let autoSaveTimer = null;
+const DEMO = ['AAPL','MSFT','JPM','NVDA','TSLA','CELH','SPY','QQQ','AGG','GLD','XLE','TLT'];
+
+/* ============================================================
+   TICKER MANAGEMENT
+============================================================ */
+function addTicker(t) {
+  t = t.toUpperCase().trim().replace(/[^A-Z0-9.]/g,'');
+  if (!t || t.length>10) return;
+  activeTickers.add(t);
+  renderTags(); scheduleAutoSave();
+}
+function removeTicker(t) { activeTickers.delete(t); renderTags(); scheduleAutoSave(); }
+function clearAll() { activeTickers.clear(); renderTags(); scheduleAutoSave(); document.getElementById('results').style.display='none'; }
+function loadDemo() { activeTickers.clear(); DEMO.forEach(t=>activeTickers.add(t)); renderTags(); scheduleAutoSave(); }
+
+function renderTags() {
+  const c = document.getElementById('tickerTags');
+  if (!activeTickers.size) {
+    c.innerHTML = '<span style="font-family:\'Josefin Sans\',sans-serif;font-size:10px;letter-spacing:2px;color:var(--cream-dim);opacity:0.5;text-transform:uppercase;align-self:center;">Search above or use presets below to add holdings</span>';
+    return;
+  }
+  c.innerHTML = '';
+  activeTickers.forEach(ticker => {
+    const d = document.createElement('div');
+    d.className = 'ticker-tag';
+    d.innerHTML = `${ticker} <span class="remove" onclick="removeTicker('${ticker.replace(/'/g,'')}')"">✕</span>`;
+    c.appendChild(d);
+  });
+}
+
+/* ============================================================
+   SEARCH
+============================================================ */
+
+
+function initSearch() {
+  const keys = Object.keys(COMPACT_DB).concat(Object.keys(RICH_DB));
+  const unique = [...new Set(keys)].sort();
+  document.getElementById('dbCount').textContent = unique.length + ' tickers';
+
+  const inp = document.getElementById('globalSearch');
+  const dd  = document.getElementById('searchDropdown');
+
+  inp.addEventListener('input', () => {
+    const q = inp.value.trim().toUpperCase();
+    if (!q || q.length < 1) { dd.classList.remove('open'); return; }
+    const results = [];
+    [...new Set([...Object.keys(RICH_DB), ...Object.keys(COMPACT_DB)])].forEach(ticker => {
+      const d = RICH_DB[ticker] || null;
+      const c = COMPACT_DB[ticker] || null;
+      const name = d ? d.name : (c ? c[0] : ticker);
+      const type = d ? d.type : (c ? TYPES[c[1]] : '');
+      if (ticker.startsWith(q) || name.toUpperCase().includes(q)) {
+        results.push({ ticker, name, type });
+      }
+    });
+    results.sort((a,b) => a.ticker.startsWith(q) ? -1 : 1);
+    if (!results.length) { dd.classList.remove('open'); return; }
+    dd.innerHTML = results.slice(0,12).map(r => `
+      <div class="search-result" onclick="addTicker('${r.ticker}');document.getElementById('globalSearch').value='';document.getElementById('searchDropdown').classList.remove('open');">
+        <span class="sr-ticker">${r.ticker}</span>
+        <span class="sr-name">${r.name}</span>
+        <span class="sr-type">${r.type}</span>
+      </div>`).join('');
+    dd.classList.add('open');
+  });
+
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const q = inp.value.trim().toUpperCase().replace(/[^A-Z0-9.]/g,'');
+      if (q) { addTicker(q); inp.value=''; dd.classList.remove('open'); }
+    }
+    if (e.key === 'Escape') { dd.classList.remove('open'); }
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.search-wrap')) dd.classList.remove('open');
+  });
+}
+
+/* ============================================================
+   AUTO-SAVE
+============================================================ */
+function scheduleAutoSave() {
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => {
+    const r = STORAGE.savePortfolio(activeTickers);
+    const el = document.getElementById('saveStatus');
+    el.textContent = r.ok ? 'Portfolio Saved' : 'Save Failed';
+    el.className   = r.ok ? 'visible saved' : 'visible error';
+    if (!r.ok) showToast('Save failed: ' + r.reason, 'error');
+    setTimeout(() => { el.className = ''; }, 3000);
+  }, 800);
+}
+
+/* ============================================================
+   ON LOAD
+============================================================ */
+window.addEventListener('DOMContentLoaded', () => {
+  // Restore portfolio
+  const r = STORAGE.loadPortfolio();
+  if (r.ok) {
+    r.tickers.forEach(t => activeTickers.add(t));
+    renderTags();
+    const b = document.getElementById('restoredBanner');
+    b.classList.remove('hidden');
+    setTimeout(() => b.classList.add('hidden'), 5000);
+  }
+  // Restore Gemini key display
+  const gk = STORAGE.loadGeminiKey();
+  if (gk) {
+    document.getElementById('geminiKeyInput').value = gk;
+    document.getElementById('geminiKeyStatus').textContent = '✓ Gemini key active';
+    document.getElementById('geminiKeyStatus').className = 'status-line ok';
+  }
+  updateSavedPortfolioInfo();
+  initSearch();
+
+  // Detect file:// protocol and show warning banner
+  if (window.location.protocol === 'file:') {
+    document.getElementById('fileProtocolBanner').classList.remove('hidden');
+  }
+  // Set db count
+  const total = [...new Set([...Object.keys(RICH_DB), ...Object.keys(COMPACT_DB)])].length;
+  document.getElementById('dbCount').textContent = total + ' tickers';
+});
+
+/* ============================================================
+   SETTINGS
+============================================================ */
+function openSettings()  { updateSavedPortfolioInfo(); document.getElementById('settingsOverlay').classList.add('open'); }
+function closeSettings() { document.getElementById('settingsOverlay').classList.remove('open'); }
+function closeSettingsOnOverlay(e) { if (e.target===document.getElementById('settingsOverlay')) closeSettings(); }
+
+function handleGoogleSignIn() {
+  // When hosted: window.location.href = '/auth/google';
+  // When downloaded:
+  showToast('Google Sign-In requires the hosted version', 'error');
+  document.getElementById('googleStatus').textContent = 'Available when app is hosted online — see setup guide.';
+  document.getElementById('googleStatus').className = 'status-line err';
+}
+
+function saveGeminiKey() {
+  const k = document.getElementById('geminiKeyInput').value.trim();
+  const s = document.getElementById('geminiKeyStatus');
+  if (!k) { s.textContent='Enter a key first.'; s.className='status-line err'; return; }
+  if (!k.startsWith('AIza')) { s.textContent='Gemini keys start with AIza...'; s.className='status-line err'; return; }
+  STORAGE.saveGeminiKey(k);
+  s.textContent='✓ Key saved'; s.className='status-line ok';
+  showToast('Gemini API key saved', 'success');
+}
+function clearGeminiKey() {
+  STORAGE.saveGeminiKey(null);
+  document.getElementById('geminiKeyInput').value='';
+  document.getElementById('geminiKeyStatus').textContent='Key removed.';
+  document.getElementById('geminiKeyStatus').className='status-line';
+  showToast('Gemini key removed');
+}
+function clearSavedPortfolio() {
+  if (!confirm('Clear your saved portfolio? This cannot be undone.')) return;
+  STORAGE.clearPortfolio(); showToast('Saved portfolio cleared'); updateSavedPortfolioInfo();
+}
+function updateSavedPortfolioInfo() {
+  const m = STORAGE.getPortfolioMeta();
+  document.getElementById('savedPortfolioInfo').textContent = m
+    ? `${m.count} ticker${m.count!==1?'s':''} saved · Last saved ${m.savedAt}`
+    : 'No saved portfolio found.';
+}
+
+/* ============================================================
+   TOAST
+============================================================ */
+function showToast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent=msg; el.className='show '+type;
+  setTimeout(()=>{ el.className=''; }, 2800);
+}
+
+/* ============================================================
+   RESULTS GENERATION
+============================================================ */
+async function generateResults() {
+  if (!activeTickers.size) { showToast('Add at least one ticker to continue.','error'); return; }
+  const loading = document.getElementById('loading');
+  const results = document.getElementById('results');
+  loading.style.display='block'; results.style.display='none';
+
+  const tickers   = Array.from(activeTickers);
+  const hasGemini = !!STORAGE.loadGeminiKey();
+
+  // Fire Gemini for ANY ticker not in the rich curated DB
+  const needsAI = tickers.filter(t => !RICH_DB[t]);
+
+  if (needsAI.length && hasGemini) {
+    document.getElementById('loadingDetail').textContent =
+      `Enhancing ${needsAI.length} ticker${needsAI.length>1?'s':''} with Gemini AI sources...`;
+  } else if (needsAI.length && !hasGemini) {
+    document.getElementById('loadingDetail').textContent =
+      `Add a free Gemini key in Settings for richer sources on ${needsAI.length} ticker${needsAI.length>1?'s':''}`;
+  } else {
+    document.getElementById('loadingDetail').textContent = '';
+  }
+
+  const aiResults = {};
+  if (hasGemini && needsAI.length) {
+    const batch = needsAI.slice(0, 8);
+    const fetches = batch.map(t =>
+      fetchGeminiSources(t)
+        .then(r => { if (r) aiResults[t] = r; })
+        .catch(() => {})
+    );
+    await Promise.allSettled(fetches);
+    const aiCount = Object.keys(aiResults).length;
+    if (aiCount === 0 && needsAI.length > 0) {
+      showToast('Gemini returned no results — check your key in Settings', 'error');
+    }
+  }
+
+  loading.style.display='none';
+  buildResults(tickers, aiResults);
+  results.style.display='block';
+  results.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function buildResults(tickers, aiResults={}) {
+  const now     = new Date();
+  const dateStr = now.toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const hasGemini = !!STORAGE.loadGeminiKey();
+
+  document.getElementById('resultsTitle').textContent = `Research Sources for ${tickers.join(', ')}`;
+  document.getElementById('resultsMeta').innerHTML =
+    `Generated ${dateStr} &middot; ${tickers.length} holding${tickers.length!==1?'s':''}` +
+    (hasGemini ? ` &middot; <span class="ai-badge">Gemini AI Active</span>` : '');
+
+  // Universal
+  const uGrid = document.getElementById('universalGrid');
+  uGrid.innerHTML='';
+  buildCards(uGrid, UNIVERSAL_SOURCES);
+
+  // Per-ticker
+  const container = document.getElementById('holdingsResults');
+  container.innerHTML='';
+  tickers.forEach(ticker => {
+    const richData   = RICH_DB[ticker];
+    const compactData= COMPACT_DB[ticker];
+    const aiData     = aiResults[ticker];
+    const block = document.createElement('div');
+    block.className = 'holding-block';
+
+    if (richData) {
+      // Full curated entry
+      block.innerHTML = `
+        <div class="holding-header">
+          <span class="ticker-badge">${ticker}</span>
+          <span class="holding-name">${richData.name}</span>
+          <div class="holding-meta">
+            <div class="holding-type">${richData.type}</div>
+            <div class="holding-sector">${richData.sector}</div>
+          </div>
+        </div>
+        <div class="source-grid" id="g-${ticker}"></div>`;
+      container.appendChild(block);
+      buildCards(document.getElementById('g-'+ticker), richData.sources);
+
+    } else if (compactData) {
+      // Template entry — also append AI-enhanced sources if available
+      const [name, typeIdx, sectorIdx, cik] = compactData;
+      const type   = TYPES[typeIdx];
+      const sector = SECTORS[sectorIdx];
+      const sources = buildTemplatedSources(ticker, name, type, sector, cik, sectorIdx);
+      const aiLabel = aiData ? ` <span class="ai-badge" style="font-size:8px">AI Enhanced</span>` : '';
+      block.innerHTML = `
+        <div class="holding-header">
+          <span class="ticker-badge">${ticker}</span>
+          <span class="holding-name">${name}</span>
+          <div class="holding-meta">
+            <div class="holding-type">${type}</div>
+            <div class="holding-sector">${sector}${aiLabel}</div>
+          </div>
+        </div>
+        <div class="source-grid" id="g-${ticker}"></div>`;
+      container.appendChild(block);
+      buildCards(document.getElementById('g-'+ticker), sources);
+      // Append AI-generated additional sources as extra cards
+      if (aiData && aiData.sources && aiData.sources.length) {
+        const grouped = groupAiSources(aiData.sources);
+        buildCards(document.getElementById('g-'+ticker), grouped, true);
+      }
+
+    } else if (aiData && aiData.sources && aiData.sources.length) {
+      // Fully AI-generated (not in any database)
+      const grouped = groupAiSources(aiData.sources);
+      block.innerHTML = `
+        <div class="holding-header">
+          <span class="ticker-badge">${ticker}</span>
+          <span class="holding-name">${aiData.name||ticker}</span>
+          <div class="holding-meta">
+            <div class="holding-type">${aiData.type||'Equity'}</div>
+            <div class="holding-sector">${aiData.sector||''} <span class="ai-badge" style="font-size:8px">AI Sources</span></div>
+          </div>
+        </div>
+        <div class="source-grid" id="g-${ticker}"></div>`;
+      container.appendChild(block);
+      buildCards(document.getElementById('g-'+ticker), grouped, true);
+
+    } else {
+      // Fallback generic
+      block.innerHTML = `
+        <div class="holding-header">
+          <span class="ticker-badge">${ticker}</span>
+          <span class="holding-name" style="opacity:0.6;font-style:italic">Unlisted Ticker</span>
+        </div>
+        <div class="source-grid" id="g-${ticker}"></div>`;
+      container.appendChild(block);
+      buildCards(document.getElementById('g-'+ticker), genericSources(ticker));
+      if (!STORAGE.loadGeminiKey()) {
+        const p = document.createElement('p'); p.className='not-found';
+        p.textContent = `${ticker} not found. Add a free Gemini API key in Settings for AI-powered source generation.`;
+        block.appendChild(p);
+      }
+    }
+  });
+}
+
+function buildCards(container, categories, isAi=false) {
+  categories.forEach(cat => {
+    const card = document.createElement('div');
+    card.className = 'source-category' + (isAi ? ' ai-gen' : '');
+    const tMap  = {free:'tag-free',premium:'tag-premium',official:'tag-official'};
+    const tlMap = {free:'Free',premium:'Premium',official:'Official'};
+    const links = cat.sources.map(s => `
+      <a class="source-item" href="${s.url}" target="_blank" rel="noopener noreferrer">
+        <span class="source-name">${s.name} <span class="source-tag ${tMap[s.tag]||'tag-free'}">${tlMap[s.tag]||'Free'}</span></span>
+        <span class="source-desc">${s.desc}</span>
+      </a>`).join('');
+    card.innerHTML = `
+      <div class="category-header">
+        <span class="category-icon">${cat.icon||'🔗'}</span>
+        <span class="category-name">${cat.category}</span>
+      </div>
+      <div class="source-list">${links}</div>`;
+    container.appendChild(card);
+  });
+}
+
+/* Build sources from compact data + sector templates */
+function buildTemplatedSources(ticker, name, type, sector, cik, sectorIdx) {
+  const isEtf = type.includes('ETF');
+  const cats = [];
+
+  // Official links
+  const officialSources = [
+    { name: `${ticker} on SEC EDGAR`, url: cik
+        ? `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${cik}&type=10-K&dateb=&owner=include&count=10`
+        : `https://efts.sec.gov/LATEST/search-index?q=%22${encodeURIComponent(name)}%22&forms=10-K,10-Q,8-K`,
+      desc: '10-K, 10-Q, 8-K direct from SEC', tag:'official' },
+    { name: `${ticker} — Yahoo Finance`, url:`https://finance.yahoo.com/quote/${ticker}/`, desc:'Free quotes, news & financials', tag:'free' },
+    { name: `${ticker} — Seeking Alpha`,  url:`https://seekingalpha.com/symbol/${ticker}/analysis`, desc:'Analyst articles & community ratings', tag:'free' },
+  ];
+  if (!isEtf) officialSources.push({ name:`${ticker} — Morningstar`, url:`https://www.morningstar.com/search?query=${ticker}`, desc:'Fundamental analysis & fair value', tag:'premium' });
+  if (isEtf)  officialSources.push({ name:`${ticker} — ETF.com`, url:`https://www.etf.com/${ticker}`, desc:'Flow data, peer comparison, analytics', tag:'free' });
+
+  cats.push({ category: isEtf ? 'ETF Sources' : 'Company Filings & Data', icon:'🏛', sources: officialSources });
+
+  // Sector-specific sources
+  const sectorSrcs = SECTOR_SOURCES[sectorIdx];
+  if (sectorSrcs) cats.push(sectorSrcs);
+
+  return cats;
+}
+
+function groupAiSources(sources) {
+  const map={};
+  sources.forEach(s => {
+    const c = s.category||'Research Sources';
+    if(!map[c]) map[c]={category:c,icon:iconForCat(c),sources:[]};
+    map[c].sources.push(s);
+  });
+  return Object.values(map);
+}
+function iconForCat(c) {
+  if(/official|filing|ir\b/i.test(c)) return '🏢';
+  if(/analyst|research/i.test(c)) return '📊';
+  if(/sector|competi/i.test(c)) return '🔭';
+  if(/community|reddit/i.test(c)) return '💬';
+  return '🔗';
+}
+function genericSources(ticker) {
+  return [{category:'Company Research',icon:'🔗',sources:[
+    {name:`${ticker} on SEC EDGAR`,url:`https://efts.sec.gov/LATEST/search-index?q=%22${ticker}%22&forms=10-K,10-Q,8-K`,desc:'SEC filings search',tag:'official'},
+    {name:`${ticker} on Yahoo Finance`,url:`https://finance.yahoo.com/quote/${ticker}/`,desc:'Quotes, news & financials',tag:'free'},
+    {name:`${ticker} on Seeking Alpha`,url:`https://seekingalpha.com/symbol/${ticker}/analysis`,desc:'Analyst articles & ratings',tag:'free'},
+    {name:`${ticker} on Morningstar`,url:`https://www.morningstar.com/search?query=${ticker}`,desc:'Fundamental analysis & fair value',tag:'premium'},
+  ]}];
+}
+
+/* ============================================================
+   GEMINI AI FALLBACK
+============================================================ */
+async function fetchGeminiSources(ticker) {
+  const key = STORAGE.loadGeminiKey();
+  if (!key) return null;
+
+  const prompt = `You are a financial research assistant. For stock ticker "${ticker}", identify the company and provide the 6 most useful research sources for individual investors.
+
+Return ONLY valid JSON, no markdown, no backticks:
+{"name":"Full Company Name","type":"Large Cap Equity|Mid Cap Equity|ETF|Bond ETF","sector":"Sector description","sources":[{"name":"Source name","url":"https://exact-url.com","desc":"Under 55 chars description","tag":"free|official|premium","category":"Official Sources|Analyst Coverage|Sector Intelligence"}]}
+
+Rules: Use real working URLs only. Prioritize official IR page, SEC EDGAR, then free sector sources. SEC EDGAR format: https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&company=${ticker}&type=10-K&dateb=&owner=include&count=10`;
+
+  // Try gemini-1.5-flash first (most reliable on free tier), fall back to 2.0
+  const MODELS = ['gemini-1.5-flash', 'gemini-2.0-flash-lite'];
+
+  for (const model of MODELS) {
+    try {
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        }
+      );
+
+      if (!resp.ok) {
+        const errBody = await resp.json().catch(() => ({}));
+        const errMsg = errBody?.error?.message || resp.statusText;
+        console.warn(`[Compass Gemini] ${model} error ${resp.status}: ${errMsg}`);
+        if (resp.status === 400) return null; // Bad key — no point retrying other models
+        continue; // Try next model
+      }
+
+      const data = await resp.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (!text) { console.warn(`[Compass Gemini] ${model} empty response`); continue; }
+
+      const clean = text.replace(/```json|```/gi, '').trim();
+      let parsed;
+      try { parsed = JSON.parse(clean); }
+      catch {
+        const m = clean.match(/\{[\s\S]+\}/);
+        if (m) { try { parsed = JSON.parse(m[0]); } catch { continue; } }
+        else continue;
+      }
+
+      if (!parsed?.sources || !Array.isArray(parsed.sources)) continue;
+      parsed.sources = parsed.sources.filter(s => s?.name && s?.url && s.url.startsWith('http'));
+      if (!parsed.sources.length) continue;
+
+      console.log(`[Compass Gemini] ${ticker} OK via ${model} (${parsed.sources.length} sources)`);
+      return parsed;
+
+    } catch(err) {
+      const msg = err.message || '';
+      if (msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('networkerror')) {
+        console.warn('[Compass Gemini] Network blocked — likely file:// protocol or ad blocker');
+        // Surface this to the user
+        if (window.location.protocol === 'file:') {
+          document.getElementById('fileProtocolBanner').classList.remove('hidden');
+        }
+        return null; // No point retrying other models if network is blocked
+      }
+      console.warn(`[Compass Gemini] ${model} fetch error:`, msg);
+    }
+  }
+  return null;
+}
+
+/* ============================================================
+   DATA — TYPE & SECTOR ENUMS
+============================================================ */
+const TYPES = [
+  'Large Cap Equity',   // 0
+  'Mid Cap Equity',     // 1
+  'Small Cap Equity',   // 2
+  'ETF — Broad Market', // 3
+  'ETF — Sector',       // 4
+  'ETF — Fixed Income', // 5
+  'ETF — International',// 6
+  'ETF — Commodity',    // 7
+  'ETF — Real Estate',  // 8
+  'ETF — Thematic',     // 9
+];
+
+const SECTORS = [
+  'Technology',               // 0
+  'Consumer Discretionary',   // 1
+  'Consumer Staples',         // 2
+  'Financials',               // 3
+  'Healthcare',               // 4
+  'Industrials',              // 5
+  'Energy',                   // 6
+  'Materials',                // 7
+  'Communication Services',   // 8
+  'Real Estate',              // 9
+  'Utilities',                // 10
+  'Diversified',              // 11
+  'ETF — US Equity',          // 12
+  'ETF — Fixed Income',       // 13
+  'ETF — International',      // 14
+  'ETF — Commodity',          // 15
+  'ETF — Sector/Thematic',    // 16
+  'Semiconductors',           // 17
+  'Biotechnology',            // 18
+  'Payments & Fintech',       // 19
+];
+
+/* ============================================================
+   SECTOR-LEVEL CURATED SOURCES
+   (used by compact DB entries — one card per sector)
+============================================================ */
+const SECTOR_SOURCES = {
+  // ── Technology ──────────────────────────────────────────────────────
+  0: { category:'Technology Intelligence', icon:'💻', sources:[
+    {name:'Stratechery',url:'https://stratechery.com',desc:'Deep tech strategy & competitive analysis',tag:'premium'},
+    {name:'The Information',url:'https://www.theinformation.com',desc:'Investigative tech & AI reporting',tag:'premium'},
+    {name:'Hacker News',url:'https://news.ycombinator.com',desc:'Dev community — early signal on tech trends',tag:'free'},
+    {name:'TechCrunch',url:'https://techcrunch.com',desc:'Startup & tech industry news',tag:'free'},
+    {name:'Ars Technica',url:'https://arstechnica.com',desc:'Deep technical & science coverage',tag:'free'},
+    {name:'r/technology',url:'https://www.reddit.com/r/technology/',desc:'Tech sector community discussion',tag:'free'},
+    {name:'Gartner Research',url:'https://www.gartner.com/en/research',desc:'Enterprise tech market analysis',tag:'free'},
+  ]},
+  // ── Consumer Discretionary ──────────────────────────────────────────
+  1: { category:'Consumer & Retail Intelligence', icon:'🛍', sources:[
+    {name:'Retail Dive',url:'https://www.retaildive.com',desc:'Retail industry news & analysis',tag:'free'},
+    {name:'NRF Research',url:'https://nrf.com/research',desc:'National Retail Federation industry data',tag:'free'},
+    {name:'Census Retail Sales',url:'https://www.census.gov/retail/',desc:'Monthly US retail sales — macro',tag:'official'},
+    {name:'Morning Consult Consumer',url:'https://morningconsult.com/topic/consumer/',desc:'Consumer confidence & spending trends',tag:'free'},
+    {name:'Nielsen Consumer Insights',url:'https://nielseniq.com/global/en/insights/',desc:'CPG & consumer market data',tag:'free'},
+    {name:'eMarketer Retail',url:'https://www.emarketer.com/topics/category/retail-ecommerce',desc:'E-commerce market sizing & forecasts',tag:'free'},
+    {name:'r/stocks — Consumer',url:'https://www.reddit.com/r/stocks/search/?q=consumer+discretionary',desc:'Community discussion on consumer stocks',tag:'free'},
+  ]},
+  // ── Consumer Staples ────────────────────────────────────────────────
+  2: { category:'Consumer Staples Intelligence', icon:'🥫', sources:[
+    {name:'Nielsen IQ Insights',url:'https://nielseniq.com/global/en/insights/',desc:'CPG market share & category trends',tag:'free'},
+    {name:'Food Dive',url:'https://www.fooddive.com',desc:'Food & beverage industry news',tag:'free'},
+    {name:'Grocery Dive',url:'https://www.grocerydive.com',desc:'Grocery retail & private label trends',tag:'free'},
+    {name:'Euromonitor International',url:'https://www.euromonitor.com/consumer-goods',desc:'Global consumer goods market research',tag:'free'},
+    {name:'IRI/Circana Market Data',url:'https://www.iriworldwide.com/en-us/insights',desc:'Retail scanner data & CPG analytics',tag:'free'},
+    {name:'USDA Economic Research',url:'https://www.ers.usda.gov',desc:'Food price & agricultural data',tag:'official'},
+  ]},
+  // ── Financials ──────────────────────────────────────────────────────
+  3: { category:'Financial Sector Intelligence', icon:'🏦', sources:[
+    {name:'American Banker',url:'https://www.americanbanker.com',desc:'Banking industry news & regulation',tag:'free'},
+    {name:'FDIC Statistics on Banking',url:'https://www.fdic.gov/bank/statistical/',desc:'Industry-wide balance sheet data',tag:'official'},
+    {name:'Federal Reserve Releases',url:'https://www.federalreserve.gov/releases/',desc:'Monetary policy & economic data',tag:'official'},
+    {name:'S&P Global Market Intelligence',url:'https://www.spglobal.com/marketintelligence/en/',desc:'Banking sector data & analytics',tag:'premium'},
+    {name:'OCC Bank Reports',url:'https://www.occ.gov/publications-and-resources/publications/quarterly-report-on-bank-trading/index-quarterly-report-on-bank-trading.html',desc:'Derivatives & trading activity reports',tag:'official'},
+    {name:'Barclays US Financial Research',url:'https://www.home.barclays/investor-relations/',desc:'Institutional financial sector research',tag:'free'},
+    {name:'r/personalfinance',url:'https://www.reddit.com/r/personalfinance/',desc:'Ground-level consumer banking sentiment',tag:'free'},
+  ]},
+  // ── Healthcare ──────────────────────────────────────────────────────
+  4: { category:'Healthcare & Pharma Intelligence', icon:'⚕️', sources:[
+    {name:'FDA Drug Approvals',url:'https://www.accessdata.fda.gov/scripts/cder/daf/',desc:'Drug approval pipeline database',tag:'official'},
+    {name:'FDA Clinical Trials',url:'https://clinicaltrials.gov',desc:'Active drug trial status & results',tag:'official'},
+    {name:'BioPharma Dive',url:'https://www.biopharmadive.com',desc:'Pharma pipeline & regulatory news',tag:'free'},
+    {name:'STAT News',url:'https://www.statnews.com',desc:'Life sciences investigative reporting',tag:'free'},
+    {name:'Fierce Healthcare',url:'https://www.fiercehealthcare.com',desc:'Healthcare industry business news',tag:'free'},
+    {name:'Health Affairs',url:'https://www.healthaffairs.org',desc:'Health policy & economics research',tag:'free'},
+    {name:'CMS Data',url:'https://www.cms.gov/data-research',desc:'Medicare & Medicaid reimbursement data',tag:'official'},
+    {name:'r/medicine',url:'https://www.reddit.com/r/medicine/',desc:'Medical community & product discussion',tag:'free'},
+  ]},
+  // ── Industrials ─────────────────────────────────────────────────────
+  5: { category:'Industrials Intelligence', icon:'⚙️', sources:[
+    {name:'IndustryWeek',url:'https://www.industryweek.com',desc:'Manufacturing industry coverage',tag:'free'},
+    {name:'ISM Manufacturing PMI',url:'https://www.ismworld.org/supply-management-news-and-reports/reports/ism-report-on-business/pmi/',desc:'Monthly manufacturing activity index',tag:'free'},
+    {name:'Aviation Week',url:'https://aviationweek.com',desc:'Aerospace & defense news',tag:'free'},
+    {name:'Transport Topics',url:'https://www.ttnews.com',desc:'Trucking & logistics industry news',tag:'free'},
+    {name:'Logistics Management',url:'https://www.logisticsmgmt.com',desc:'Supply chain & logistics analysis',tag:'free'},
+    {name:'US Census Manufacturing',url:'https://www.census.gov/manufacturing/',desc:'Monthly shipments & orders data',tag:'official'},
+    {name:'Dodge Construction Network',url:'https://www.construction.com',desc:'Construction spending & project data',tag:'free'},
+  ]},
+  // ── Energy ──────────────────────────────────────────────────────────
+  6: { category:'Energy Sector Intelligence', icon:'⚡', sources:[
+    {name:'EIA Weekly Petroleum Report',url:'https://www.eia.gov/petroleum/supply/weekly/',desc:'US crude & product inventories',tag:'official'},
+    {name:'EIA Natural Gas Storage',url:'https://www.eia.gov/naturalgas/storage/dashboard/',desc:'Weekly gas storage report',tag:'official'},
+    {name:'OPEC Monthly Oil Report',url:'https://www.opec.org/opec_web/en/publications/338.htm',desc:'Global supply/demand balance',tag:'free'},
+    {name:'IEA Oil Market Report',url:'https://www.iea.org/reports/oil-market-report',desc:'IEA monthly global oil market analysis',tag:'free'},
+    {name:'Oil Price.com',url:'https://oilprice.com',desc:'Energy commodity news & analysis',tag:'free'},
+    {name:'Reuters Energy',url:'https://www.reuters.com/business/energy/',desc:'Breaking energy & commodity moves',tag:'free'},
+    {name:'S&P Global Platts',url:'https://www.spglobal.com/commodityinsights/en',desc:'Energy commodity price benchmarks',tag:'premium'},
+    {name:'r/energy',url:'https://www.reddit.com/r/energy/',desc:'Energy sector community discussion',tag:'free'},
+  ]},
+  // ── Materials ───────────────────────────────────────────────────────
+  7: { category:'Materials Sector Intelligence', icon:'🪨', sources:[
+    {name:'Mining.com',url:'https://www.mining.com',desc:'Mining & metals industry news',tag:'free'},
+    {name:'Steel Market Update',url:'https://www.steelmarketupdate.com',desc:'Steel pricing & market intel',tag:'free'},
+    {name:'AISI Steel Shipment Data',url:'https://www.steel.org/steel-data/',desc:'US steel shipment statistics',tag:'free'},
+    {name:'Kitco Metals News',url:'https://www.kitco.com/news/',desc:'Precious & base metals pricing news',tag:'free'},
+    {name:'ICIS Chemical News',url:'https://www.icis.com/explore/resources/news/',desc:'Specialty chemicals market coverage',tag:'free'},
+    {name:'LME Metals Prices',url:'https://www.lme.com/en/metals',desc:'London Metal Exchange prices & data',tag:'free'},
+    {name:'Fastmarkets',url:'https://www.fastmarkets.com',desc:'Metals & forest products pricing',tag:'premium'},
+  ]},
+  // ── Communication Services ──────────────────────────────────────────
+  8: { category:'Communication Services Intelligence', icon:'📡', sources:[
+    {name:'Social Media Today',url:'https://www.socialmediatoday.com',desc:'Platform changes & digital ad trends',tag:'free'},
+    {name:'Variety',url:'https://variety.com',desc:'Media & entertainment industry news',tag:'free'},
+    {name:'The Hollywood Reporter',url:'https://www.hollywoodreporter.com',desc:'Media deals & content strategy',tag:'free'},
+    {name:'eMarketer Digital Media',url:'https://www.emarketer.com/topics/category/digital-media',desc:'Digital media market sizing',tag:'free'},
+    {name:'Recode / Vox Media',url:'https://www.vox.com/recode',desc:'Big tech & media analysis',tag:'free'},
+    {name:'Pew Research — Media',url:'https://www.pewresearch.org/topic/news-habits-media/',desc:'News consumption & media trends',tag:'free'},
+    {name:'r/media',url:'https://www.reddit.com/r/media/',desc:'Broad media industry discussion',tag:'free'},
+  ]},
+  // ── Real Estate ─────────────────────────────────────────────────────
+  9: { category:'Real Estate Intelligence', icon:'🏠', sources:[
+    {name:'NAREIT Data & Research',url:'https://www.reit.com/data-research',desc:'REIT total returns & sector stats',tag:'free'},
+    {name:'CoStar News',url:'https://www.costar.com/article',desc:'Commercial real estate market coverage',tag:'free'},
+    {name:'HousingWire',url:'https://www.housingwire.com',desc:'Mortgage, housing & REIT news',tag:'free'},
+    {name:'Green Street Research',url:'https://www.greenstreet.com',desc:'Institutional REIT & CRE research',tag:'premium'},
+    {name:'CBRE Research',url:'https://www.cbre.com/insights/reports',desc:'Commercial real estate market reports',tag:'free'},
+    {name:'FRED — Case-Shiller Index',url:'https://fred.stlouisfed.org/series/CSUSHPISA',desc:'US home price index history',tag:'official'},
+    {name:'Zillow Research',url:'https://www.zillow.com/research/',desc:'Residential real estate data & trends',tag:'free'},
+  ]},
+  // ── Utilities ───────────────────────────────────────────────────────
+  10: { category:'Utilities Sector Intelligence', icon:'💡', sources:[
+    {name:'Utility Dive',url:'https://www.utilitydive.com',desc:'Electric & gas utility sector news',tag:'free'},
+    {name:'EIA Electricity Data',url:'https://www.eia.gov/electricity/',desc:'US electricity generation & rates',tag:'official'},
+    {name:'Edison Electric Institute',url:'https://www.eei.org/en/issues-and-policy/clean-energy/documents',desc:'US utility industry data & policy',tag:'free'},
+    {name:'American Gas Association',url:'https://www.aga.org/research',desc:'Natural gas utility data & research',tag:'free'},
+    {name:'Regulatory Research Associates',url:'https://www.spglobal.com/marketintelligence/en/mi/products/regulatory-research-associates.html',desc:'Utility rate case & regulation tracker',tag:'premium'},
+    {name:'Seeking Alpha — Utilities',url:'https://seekingalpha.com/news/utilities',desc:'Utility sector analysis & dividends',tag:'free'},
+  ]},
+  // ── ETF Broad Market ─────────────────────────────────────────────────
+  12: { category:'ETF Market Intelligence', icon:'📊', sources:[
+    {name:'ETF.com',url:'https://www.etf.com',desc:'ETF analytics, flows & comparisons',tag:'free'},
+    {name:'ETFdb.com',url:'https://etfdb.com',desc:'ETF database, screener & alternatives',tag:'free'},
+    {name:'JP Morgan Guide to Markets',url:'https://am.jpmorgan.com/us/en/asset-management/adv/insights/market-insights/guide-to-the-markets/',desc:'Free quarterly market briefing deck',tag:'free'},
+    {name:'Bogleheads Forum',url:'https://www.bogleheads.org/forum/',desc:'Passive investing philosophy & discussion',tag:'free'},
+    {name:'Portfolio Visualizer',url:'https://www.portfoliovisualizer.com',desc:'Backtest & compare ETF allocations',tag:'free'},
+    {name:'VettaFi ETF Database',url:'https://etfdb.com/tools/etf-screener/',desc:'ETF screening & analysis tools',tag:'free'},
+    {name:'Morningstar ETF Analysis',url:'https://www.morningstar.com/etfs',desc:'ETF ratings, costs & holdings analysis',tag:'premium'},
+    {name:'Yardeni Research',url:'https://yardeni.com',desc:'Free market valuation models & charts',tag:'free'},
+  ]},
+  // ── Fixed Income ─────────────────────────────────────────────────────
+  13: { category:'Fixed Income Intelligence', icon:'📈', sources:[
+    {name:'US Treasury Yield Curve',url:'https://home.treasury.gov/resource-center/data-chart-center/interest-rates/',desc:'Daily yield curve — key rate driver',tag:'official'},
+    {name:'FRED Bond Market Data',url:'https://fred.stlouisfed.org/categories/32992',desc:'Fed bond series, spreads & rates',tag:'free'},
+    {name:'PIMCO Economic Outlook',url:'https://www.pimco.com/en-us/resources/education/investment-concepts',desc:'Fixed income thought leadership',tag:'free'},
+    {name:'BlackRock Investment Institute',url:'https://www.blackrock.com/us/individual/insights/blackrock-investment-institute',desc:'Macro & bond market outlook',tag:'free'},
+    {name:'FOMC Meeting Calendar',url:'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',desc:'Fed meeting dates — rate catalyst',tag:'official'},
+    {name:'SIFMA Bond Market Data',url:'https://www.sifma.org/resources/research/us-bond-market-issuance-and-outstanding/',desc:'US bond market issuance statistics',tag:'free'},
+    {name:'Bianco Research',url:'https://www.biancoresearch.com',desc:'Independent rates & macro commentary',tag:'premium'},
+    {name:'r/bonds',url:'https://www.reddit.com/r/bonds/',desc:'Fixed income investor community',tag:'free'},
+  ]},
+  // ── International ────────────────────────────────────────────────────
+  14: { category:'International Markets Intelligence', icon:'🌍', sources:[
+    {name:'IMF World Economic Outlook',url:'https://www.imf.org/en/Publications/WEO',desc:'Global macro forecasts & country reports',tag:'free'},
+    {name:'OECD Economic Outlook',url:'https://www.oecd.org/economic-outlook/',desc:'Developed market economic forecasts',tag:'free'},
+    {name:'World Bank Open Data',url:'https://data.worldbank.org',desc:'Global GDP, trade & development data',tag:'free'},
+    {name:'ECB Economic Bulletin',url:'https://www.ecb.europa.eu/pub/economic-bulletin/html/index.en.html',desc:'Eurozone monetary & economic outlook',tag:'official'},
+    {name:'Bank of Japan Research',url:'https://www.boj.or.jp/en/research/',desc:'Japan monetary policy & economic data',tag:'official'},
+    {name:'FT Emerging Markets',url:'https://www.ft.com/emerging-markets',desc:'EM news coverage from FT',tag:'free'},
+    {name:'Capital Economics EM',url:'https://www.capitaleconomics.com',desc:'EM economic & market commentary',tag:'premium'},
+    {name:'r/ems (Emerging Markets)',url:'https://www.reddit.com/r/emergingmarkets/',desc:'EM investor community discussion',tag:'free'},
+  ]},
+  // ── Commodities ──────────────────────────────────────────────────────
+  15: { category:'Commodity Market Intelligence', icon:'🪙', sources:[
+    {name:'World Gold Council',url:'https://www.gold.org/goldhub/data',desc:'Gold demand, supply & ETF flow data',tag:'free'},
+    {name:'Kitco News',url:'https://www.kitco.com/news/',desc:'Precious metals prices & analysis',tag:'free'},
+    {name:'EIA Energy Overview',url:'https://www.eia.gov',desc:'Oil, gas, coal & electricity data',tag:'official'},
+    {name:'CME Group Market Data',url:'https://www.cmegroup.com/market-data.html',desc:'Futures open interest & volume',tag:'free'},
+    {name:'CRB Commodity Index',url:'https://www.crbtrader.com',desc:'Broad commodity price benchmarks',tag:'free'},
+    {name:'Bloomberg Commodity Index',url:'https://www.bloomberg.com/markets/commodities',desc:'Commodity market overview',tag:'free'},
+    {name:'USDA WASDE Report',url:'https://www.usda.gov/oce/commodity/wasde/',desc:'World agricultural supply & demand',tag:'official'},
+  ]},
+  // ── Sector/Thematic ETFs ─────────────────────────────────────────────
+  16: { category:'Sector & Thematic ETF Resources', icon:'🔬', sources:[
+    {name:'ETF.com Sector Tools',url:'https://www.etf.com/channels/sector-etfs',desc:'Sector ETF analytics & comparisons',tag:'free'},
+    {name:'S&P GICS Sector Indices',url:'https://www.spglobal.com/spdji/en/landing/investment-themes/sectors/',desc:'Sector index methodology & returns',tag:'free'},
+    {name:'Seeking Alpha Sector News',url:'https://seekingalpha.com/market-news/sector',desc:'Sector rotating analysis',tag:'free'},
+    {name:'Fidelity Sector Performance',url:'https://eresearch.fidelity.com/eresearch/markets_sectors/sectors/si_performance.jhtml',desc:'Free sector performance tracker',tag:'free'},
+    {name:'State Street Sector Insights',url:'https://www.ssga.com/us/en/institutional/etfs/insights/sector-insights',desc:'SSGA sector rotation research',tag:'free'},
+    {name:'VettaFi Thematic ETF Data',url:'https://etfdb.com/type/thematic/',desc:'Thematic ETF flows & performance',tag:'free'},
+  ]},
+  // ── Semiconductors ───────────────────────────────────────────────────
+  17: { category:'Semiconductor Intelligence', icon:'🔲', sources:[
+    {name:'SemiAnalysis',url:'https://semianalysis.com',desc:'Deep chip & AI infrastructure analysis',tag:'premium'},
+    {name:'Semiconductor Industry Assoc.',url:'https://www.semiconductors.org/data-and-reports/',desc:'Industry shipment & billing data',tag:'free'},
+    {name:'VLSI Research',url:'https://www.vlsiresearch.com',desc:'Semiconductor market forecasts',tag:'premium'},
+    {name:'Anandtech',url:'https://www.anandtech.com',desc:'Technical chip benchmarks & analysis',tag:'free'},
+    {name:'EE Times',url:'https://www.eetimes.com',desc:'Electronics engineering industry news',tag:'free'},
+    {name:'Nikkei Asia — Chips',url:'https://asia.nikkei.com/Business/Tech/Semiconductors',desc:'Asian supply chain semiconductor news',tag:'free'},
+    {name:'r/hardware',url:'https://www.reddit.com/r/hardware/',desc:'Hardware tech community & benchmarks',tag:'free'},
+  ]},
+  // ── Biotech ──────────────────────────────────────────────────────────
+  18: { category:'Biotech & Genomics Intelligence', icon:'🧬', sources:[
+    {name:'FDA Drug Approvals (CDER)',url:'https://www.accessdata.fda.gov/scripts/cder/daf/',desc:'Drug approval & rejection database',tag:'official'},
+    {name:'ClinicalTrials.gov',url:'https://clinicaltrials.gov',desc:'Live clinical trial status & results',tag:'official'},
+    {name:'BioPharma Dive',url:'https://www.biopharmadive.com',desc:'Pipeline & regulatory news',tag:'free'},
+    {name:'STAT News',url:'https://www.statnews.com',desc:'Life sciences investigative reporting',tag:'free'},
+    {name:'Endpoints News',url:'https://endpts.com',desc:'Daily biopharma pipeline tracker',tag:'free'},
+    {name:'GenomeWeb',url:'https://www.genomeweb.com',desc:'Genomics & sequencing industry news',tag:'free'},
+    {name:'Fierce Biotech',url:'https://www.fiercebiotech.com',desc:'Biotech deals, trials & approvals',tag:'free'},
+    {name:'r/biotech',url:'https://www.reddit.com/r/biotech/',desc:'Biotech investor community',tag:'free'},
+  ]},
+  // ── Payments & Fintech ───────────────────────────────────────────────
+  19: { category:'Payments & Fintech Intelligence', icon:'💳', sources:[
+    {name:'PYMNTS.com',url:'https://www.pymnts.com',desc:'Payments industry news & data',tag:'free'},
+    {name:'Federal Reserve Payments Study',url:'https://www.federalreserve.gov/paymentsystems/fr-payments-study.htm',desc:'US payment volume data',tag:'official'},
+    {name:'Nilson Report',url:'https://nilsonreport.com',desc:'Global card & payment market data',tag:'premium'},
+    {name:'Finextra',url:'https://www.finextra.com',desc:'Financial technology industry news',tag:'free'},
+    {name:'The Block — Crypto/Fintech',url:'https://www.theblock.co',desc:'Crypto & digital payments coverage',tag:'free'},
+    {name:'McKinsey Global Payments',url:'https://www.mckinsey.com/industries/financial-services/our-insights/global-payments',desc:'Annual global payments report — free',tag:'free'},
+    {name:'Bank for International Settlements',url:'https://www.bis.org/cpmi/publications.htm',desc:'Global payment systems research',tag:'official'},
+  ]},
+};
+
+/* ============================================================
+   UNIVERSAL SOURCES
+============================================================ */
+const UNIVERSAL_SOURCES = [
+  { category:'Regulatory & Filings', icon:'🏛', sources:[
+    {name:'SEC EDGAR Full-Text Search',url:'https://efts.sec.gov/LATEST/search-index?q=%22%22&forms=10-K,10-Q,8-K',desc:'All public company filings — free & official',tag:'official'},
+    {name:'SEC EDGAR Company Search',url:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany',desc:'Find any company filings by name or ticker',tag:'official'},
+    {name:'Federal Reserve FRED',url:'https://fred.stlouisfed.org',desc:'Rates, inflation, employment — authoritative',tag:'official'},
+    {name:'U.S. Treasury Yield Curve',url:'https://home.treasury.gov/resource-center/data-chart-center/interest-rates/',desc:'Daily yield curve — critical for all investors',tag:'official'},
+  ]},
+  { category:'Market News', icon:'📰', sources:[
+    {name:'Reuters Markets',url:'https://www.reuters.com/markets/',desc:'Breaking market & macro news',tag:'free'},
+    {name:'Financial Times Markets',url:'https://www.ft.com/markets',desc:'Global finance coverage',tag:'free'},
+    {name:'Yahoo Finance',url:'https://finance.yahoo.com',desc:'Free quotes, news & earnings calendar',tag:'free'},
+    {name:'Bloomberg Markets',url:'https://www.bloomberg.com/markets',desc:'Top headlines — free tier available',tag:'free'},
+  ]},
+  { category:'Macro & Research', icon:'🌐', sources:[
+    {name:'JP Morgan Guide to the Markets',url:'https://am.jpmorgan.com/us/en/asset-management/adv/insights/market-insights/guide-to-the-markets/',desc:'Quarterly market deck — free public PDF',tag:'free'},
+    {name:'IMF World Economic Outlook',url:'https://www.imf.org/en/Publications/WEO',desc:'Global macro forecasts & reports',tag:'free'},
+    {name:'NBER Working Papers',url:'https://www.nber.org/papers',desc:'Academic economic research',tag:'free'},
+    {name:'Goldman Sachs Insights',url:'https://www.goldmansachs.com/insights/',desc:'Publicly available macro research',tag:'free'},
+  ]},
+  { category:'Community & Earnings', icon:'💬', sources:[
+    {name:'r/investing',url:'https://www.reddit.com/r/investing/',desc:'General investment discussion',tag:'free'},
+    {name:'r/SecurityAnalysis',url:'https://www.reddit.com/r/SecurityAnalysis/',desc:'Deep value analysis & research',tag:'free'},
+    {name:'Earnings Whispers',url:'https://www.earningswhispers.com',desc:'Earnings calendar & whisper estimates',tag:'free'},
+    {name:'Nasdaq Earnings Calendar',url:'https://www.nasdaq.com/market-activity/earnings',desc:'Official exchange earnings dates',tag:'free'},
+  ]},
+];
+
+/* ============================================================
+   RICH DATABASE — 30 fully curated tickers (from v2, expanded)
+============================================================ */
+const RICH_DB = {
+  'AAPL':{name:'Apple Inc.',type:'Large Cap Equity',sector:'Consumer Technology',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'Apple Investor Relations',url:'https://investor.apple.com',desc:'Earnings, guidance, press releases',tag:'official'},
+      {name:'Apple SEC Filings',url:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000320193&type=10-K&dateb=&owner=include&count=10',desc:'10-K, 10-Q, 8-K direct from SEC',tag:'official'},
+      {name:'Apple Newsroom',url:'https://www.apple.com/newsroom/',desc:'Product & corporate announcements',tag:'official'},
+    ]},
+    {category:'Analyst Coverage',icon:'📊',sources:[
+      {name:'Seeking Alpha — AAPL',url:'https://seekingalpha.com/symbol/AAPL/analysis',desc:'Analyst & contributor research',tag:'free'},
+      {name:'Yahoo Finance — AAPL',url:'https://finance.yahoo.com/quote/AAPL/analysis/',desc:'Consensus estimates & ratings',tag:'free'},
+      {name:'Morningstar — AAPL',url:'https://www.morningstar.com/stocks/xnas/aapl/quote',desc:'Fundamental analysis & fair value',tag:'premium'},
+    ]},
+    {category:'Sector Intelligence',icon:'🔭',sources:[
+      {name:'9to5Mac',url:'https://9to5mac.com',desc:'Product pipeline & supply chain',tag:'free'},
+      {name:'Counterpoint Research',url:'https://www.counterpointresearch.com/research/',desc:'Smartphone market share & trends',tag:'free'},
+      {name:'r/apple',url:'https://www.reddit.com/r/apple/',desc:'Consumer sentiment discussion',tag:'free'},
+    ]},
+  ]},
+  'MSFT':{name:'Microsoft Corporation',type:'Large Cap Equity',sector:'Cloud & Enterprise Technology',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'Microsoft Investor Relations',url:'https://www.microsoft.com/en-us/investor',desc:'Earnings, reports, annual filings',tag:'official'},
+      {name:'Microsoft SEC Filings',url:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000789019&type=10-K&dateb=&owner=include&count=10',desc:'10-K, 10-Q, 8-K filings',tag:'official'},
+    ]},
+    {category:'Analyst & Cloud Coverage',icon:'📊',sources:[
+      {name:'Seeking Alpha — MSFT',url:'https://seekingalpha.com/symbol/MSFT/analysis',desc:'Research articles & ratings',tag:'free'},
+      {name:'Synergy Research — Cloud',url:'https://www.srgresearch.com/articles',desc:'Azure market share tracking',tag:'free'},
+      {name:'Stratechery',url:'https://stratechery.com',desc:'Deep tech strategy analysis',tag:'premium'},
+    ]},
+  ]},
+  'NVDA':{name:'NVIDIA Corporation',type:'Large Cap Equity',sector:'Semiconductors & AI Infrastructure',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'NVIDIA Investor Relations',url:'https://investor.nvidia.com',desc:'Earnings, data center updates',tag:'official'},
+      {name:'NVIDIA SEC Filings',url:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001045810&type=10-K&dateb=&owner=include&count=10',desc:'Annual & quarterly filings',tag:'official'},
+    ]},
+    {category:'Sector Intelligence',icon:'🔭',sources:[
+      {name:'SemiAnalysis',url:'https://semianalysis.com',desc:'Deep semiconductor & AI chip analysis',tag:'premium'},
+      {name:'Semiconductor Industry Assoc.',url:'https://www.semiconductors.org/data-and-reports/',desc:'Industry shipment data',tag:'free'},
+      {name:'r/nvidia',url:'https://www.reddit.com/r/nvidia/',desc:'Product & sentiment discussion',tag:'free'},
+      {name:'r/MachineLearning',url:'https://www.reddit.com/r/MachineLearning/',desc:'AI research & GPU demand signals',tag:'free'},
+    ]},
+  ]},
+  'AMZN':{name:'Amazon.com Inc.',type:'Large Cap Equity',sector:'E-Commerce & Cloud',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'Amazon Investor Relations',url:'https://ir.aboutamazon.com',desc:'Annual letters, earnings, filings',tag:'official'},
+      {name:'Amazon SEC Filings',url:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001018724&type=10-K&dateb=&owner=include&count=10',desc:'10-K, 10-Q, 8-K filings',tag:'official'},
+    ]},
+    {category:'Sector Intelligence',icon:'🔭',sources:[
+      {name:'Marketplace Pulse',url:'https://www.marketplacepulse.com',desc:'Amazon marketplace data',tag:'free'},
+      {name:'Synergy Research — AWS',url:'https://www.srgresearch.com/articles',desc:'AWS cloud market share',tag:'free'},
+    ]},
+  ]},
+  'GOOGL':{name:'Alphabet Inc.',type:'Large Cap Equity',sector:'Digital Advertising & AI',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'Alphabet Investor Relations',url:'https://abc.xyz/investor/',desc:'Earnings transcripts, annual reports',tag:'official'},
+      {name:'Alphabet SEC Filings',url:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001652044&type=10-K&dateb=&owner=include&count=10',desc:'Annual & quarterly filings',tag:'official'},
+    ]},
+    {category:'Sector Intelligence',icon:'🔭',sources:[
+      {name:'Search Engine Land',url:'https://searchengineland.com',desc:'Google search & ad product changes',tag:'free'},
+      {name:'Stratechery',url:'https://stratechery.com',desc:'Digital advertising & AI analysis',tag:'premium'},
+    ]},
+  ]},
+  'META':{name:'Meta Platforms Inc.',type:'Large Cap Equity',sector:'Social Media & Digital Advertising',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'Meta Investor Relations',url:'https://investor.fb.com',desc:'Earnings, user metrics, guidance',tag:'official'},
+      {name:'Meta SEC Filings',url:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001326801&type=10-K&dateb=&owner=include&count=10',desc:'Annual & quarterly filings',tag:'official'},
+    ]},
+    {category:'Sector Intelligence',icon:'🔭',sources:[
+      {name:'Social Media Today',url:'https://www.socialmediatoday.com',desc:'Platform & advertising trends',tag:'free'},
+      {name:'eMarketer',url:'https://www.emarketer.com',desc:'Digital ad spend market data',tag:'free'},
+    ]},
+  ]},
+  'TSLA':{name:'Tesla Inc.',type:'Large Cap Equity',sector:'Electric Vehicles & Energy',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'Tesla Investor Relations',url:'https://ir.tesla.com',desc:'Deliveries, earnings, Shareholder Day',tag:'official'},
+      {name:'Tesla SEC Filings',url:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001318605&type=10-K&dateb=&owner=include&count=10',desc:'Annual & quarterly filings',tag:'official'},
+    ]},
+    {category:'Delivery & EV Sector',icon:'🔋',sources:[
+      {name:'Troy Teslike Delivery Tracker',url:'https://troyintesla.com',desc:'Independent delivery model',tag:'free'},
+      {name:'EV Volumes Global Data',url:'https://www.ev-volumes.com',desc:'Global EV market share data',tag:'free'},
+      {name:'CleanTechnica',url:'https://cleantechnica.com',desc:'EV & clean energy news',tag:'free'},
+      {name:'r/teslainvestorsclub',url:'https://www.reddit.com/r/teslainvestorsclub/',desc:'Long-term investor community',tag:'free'},
+    ]},
+  ]},
+  'JPM':{name:'JPMorgan Chase & Co.',type:'Large Cap Equity',sector:'Banking & Financial Services',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'JPMorgan Investor Relations',url:'https://www.jpmorganchase.com/ir',desc:'Earnings, supplements, reports',tag:'official'},
+      {name:'JPMorgan SEC Filings',url:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000019617&type=10-K&dateb=&owner=include&count=10',desc:'10-K, 10-Q, proxy filings',tag:'official'},
+      {name:'JPMorgan Research (Public)',url:'https://www.jpmorgan.com/insights/research',desc:'Publicly available macro research',tag:'free'},
+    ]},
+    {category:'Banking Regulatory Data',icon:'🏦',sources:[
+      {name:'Fed Stress Test Results',url:'https://www.federalreserve.gov/supervisionreg/stress-tests-capital-planning.htm',desc:'DFAST capital ratio results',tag:'official'},
+      {name:'FDIC BankFind Suite',url:'https://banks.data.fdic.gov/docs/',desc:'Deposit & balance sheet data',tag:'official'},
+      {name:'American Banker',url:'https://www.americanbanker.com',desc:'Banking industry news',tag:'free'},
+    ]},
+  ]},
+  'V':{name:'Visa Inc.',type:'Large Cap Equity',sector:'Payments & Fintech',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'Visa Investor Relations',url:'https://investor.visa.com',desc:'Payment volume, earnings, network',tag:'official'},
+      {name:'Visa SEC Filings',url:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001403161&type=10-K&dateb=&owner=include&count=10',desc:'Annual & quarterly filings',tag:'official'},
+    ]},
+    {category:'Payments Intelligence',icon:'💳',sources:[
+      {name:'PYMNTS.com',url:'https://www.pymnts.com',desc:'Payments industry news',tag:'free'},
+      {name:'Federal Reserve Payments Study',url:'https://www.federalreserve.gov/paymentsystems/fr-payments-study.htm',desc:'US payments volume data',tag:'official'},
+      {name:'Nilson Report',url:'https://nilsonreport.com',desc:'Global card market data',tag:'premium'},
+    ]},
+  ]},
+  'BRK.B':{name:'Berkshire Hathaway Inc.',type:'Large Cap Equity',sector:'Diversified Conglomerate',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'Berkshire Shareholder Letters',url:'https://www.berkshirehathaway.com/letters/letters.html',desc:"Buffett's annual letters — essential",tag:'official'},
+      {name:'Berkshire SEC Filings',url:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001067983&type=10-K&dateb=&owner=include&count=10',desc:'10-K, 13-F holdings filings',tag:'official'},
+    ]},
+    {category:'Analysis',icon:'📊',sources:[
+      {name:'The Rational Walk',url:'https://rationalwalk.com',desc:'Independent Berkshire deep-dives',tag:'free'},
+      {name:'r/Berkshire_Hathaway',url:'https://www.reddit.com/r/Berkshire_Hathaway/',desc:'Community analysis',tag:'free'},
+    ]},
+  ]},
+  'GS':{name:'Goldman Sachs Group Inc.',type:'Large Cap Equity',sector:'Investment Banking',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'Goldman Sachs IR',url:'https://www.goldmansachs.com/investor-relations/',desc:'Earnings, ROE targets, segments',tag:'official'},
+      {name:'Goldman Sachs Insights',url:'https://www.goldmansachs.com/insights/',desc:'Public macro research & reports',tag:'free'},
+      {name:'Goldman Sachs SEC Filings',url:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000886982&type=10-K&dateb=&owner=include&count=10',desc:'Annual & quarterly filings',tag:'official'},
+    ]},
+    {category:'Banking Intelligence',icon:'🏦',sources:[
+      {name:'FDIC Statistics on Banking',url:'https://www.fdic.gov/bank/statistical/',desc:'Industry-wide banking stats',tag:'official'},
+      {name:'Dealogic',url:'https://dealogic.com',desc:'M&A & capital markets league tables',tag:'premium'},
+    ]},
+  ]},
+  'NFLX':{name:'Netflix Inc.',type:'Large Cap Equity',sector:'Streaming Media',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'Netflix Investor Relations',url:'https://ir.netflix.net',desc:'Subscriber, ARM, earnings data',tag:'official'},
+      {name:'Netflix SEC Filings',url:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001065280&type=10-K&dateb=&owner=include&count=10',desc:'Annual & quarterly filings',tag:'official'},
+    ]},
+    {category:'Streaming Sector',icon:'📺',sources:[
+      {name:'The Streamable',url:'https://thestreamable.com',desc:'Streaming market analysis',tag:'free'},
+      {name:'Deadline',url:'https://deadline.com',desc:'Content strategy & media news',tag:'free'},
+      {name:'Antenna',url:'https://www.antenna.live',desc:'Subscriber & churn metrics',tag:'premium'},
+    ]},
+  ]},
+  'XOM':{name:'Exxon Mobil Corporation',type:'Large Cap Equity',sector:'Energy — Oil & Gas',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'ExxonMobil IR',url:'https://investor.exxonmobil.com',desc:'Earnings, capital allocation',tag:'official'},
+      {name:'ExxonMobil SEC Filings',url:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000034088&type=10-K&dateb=&owner=include&count=10',desc:'Annual & quarterly filings',tag:'official'},
+    ]},
+    {category:'Energy Data',icon:'⚡',sources:[
+      {name:'EIA Energy Information Admin.',url:'https://www.eia.gov',desc:'Oil/gas production & inventory',tag:'official'},
+      {name:'OPEC Monthly Report',url:'https://www.opec.org/opec_web/en/publications/338.htm',desc:'Global supply/demand balance',tag:'free'},
+    ]},
+  ]},
+  'JNJ':{name:'Johnson & Johnson',type:'Large Cap Equity',sector:'Pharmaceuticals & MedTech',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'J&J Investor Relations',url:'https://investor.jnj.com',desc:'Earnings, pipeline, filings',tag:'official'},
+      {name:'J&J SEC Filings',url:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000200406&type=10-K&dateb=&owner=include&count=10',desc:'Annual & quarterly filings',tag:'official'},
+    ]},
+    {category:'Healthcare Sector',icon:'⚕️',sources:[
+      {name:'FDA Drug Approvals',url:'https://www.accessdata.fda.gov/scripts/cder/daf/',desc:'Drug approval database',tag:'official'},
+      {name:'BioPharma Dive',url:'https://www.biopharmadive.com',desc:'Pharma pipeline news',tag:'free'},
+      {name:'STAT News',url:'https://www.statnews.com',desc:'Life sciences reporting',tag:'free'},
+    ]},
+  ]},
+  'WMT':{name:'Walmart Inc.',type:'Large Cap Equity',sector:'Consumer Retail',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'Walmart Investor Relations',url:'https://stock.walmart.com',desc:'Comp sales, earnings, store data',tag:'official'},
+      {name:'Walmart SEC Filings',url:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000104169&type=10-K&dateb=&owner=include&count=10',desc:'Annual & quarterly filings',tag:'official'},
+    ]},
+    {category:'Retail Sector',icon:'🛒',sources:[
+      {name:'Retail Dive',url:'https://www.retaildive.com',desc:'Retail industry news',tag:'free'},
+      {name:'Census Retail Sales',url:'https://www.census.gov/retail/',desc:'Monthly US retail macro data',tag:'official'},
+    ]},
+  ]},
+  'BA':{name:'Boeing Company',type:'Large Cap Equity',sector:'Aerospace & Defense',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'Boeing Investor Relations',url:'https://investors.boeing.com',desc:'Deliveries, backlog, earnings',tag:'official'},
+      {name:'Boeing SEC Filings',url:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000012927&type=10-K&dateb=&owner=include&count=10',desc:'Annual & quarterly filings',tag:'official'},
+    ]},
+    {category:'Aerospace Intelligence',icon:'✈️',sources:[
+      {name:'Aviation Week',url:'https://aviationweek.com',desc:'Aerospace industry news',tag:'free'},
+      {name:'Leeham News',url:'https://leehamnews.com',desc:'Deep Boeing & Airbus analysis',tag:'free'},
+      {name:'FAA Aviation Data',url:'https://www.faa.gov/data_research/',desc:'Aviation statistics & safety',tag:'official'},
+    ]},
+  ]},
+  'CELH':{name:'Celsius Holdings Inc.',type:'Mid Cap Equity',sector:'Consumer Beverages',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'Celsius Investor Relations',url:'https://ir.celsius.com',desc:'Earnings, distribution updates',tag:'official'},
+      {name:'Celsius SEC Filings',url:'https://efts.sec.gov/LATEST/search-index?q=%22Celsius+Holdings%22&forms=10-K,10-Q',desc:'Annual & quarterly reports',tag:'official'},
+    ]},
+    {category:'Beverage Sector',icon:'🥤',sources:[
+      {name:'Nielsen IQ Insights',url:'https://nielseniq.com/global/en/insights/',desc:'Retail scan & market share',tag:'free'},
+      {name:'Seeking Alpha — CELH',url:'https://seekingalpha.com/symbol/CELH/analysis',desc:'Growth & distribution analysis',tag:'free'},
+    ]},
+  ]},
+  'FSLR':{name:'First Solar Inc.',type:'Mid Cap Equity',sector:'Clean Energy — Solar',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'First Solar IR',url:'https://investor.firstsolar.com',desc:'Capacity, bookings, earnings',tag:'official'},
+      {name:'First Solar SEC Filings',url:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001274494&type=10-K&dateb=&owner=include&count=10',desc:'Annual & quarterly reports',tag:'official'},
+    ]},
+    {category:'Solar Intelligence',icon:'☀️',sources:[
+      {name:'PV Magazine',url:'https://www.pv-magazine.com',desc:'Solar technology & market news',tag:'free'},
+      {name:'DOE Solar Energy Office',url:'https://www.energy.gov/eere/solar/',desc:'Government policy & IRA tracking',tag:'official'},
+    ]},
+  ]},
+  'NUE':{name:'Nucor Corporation',type:'Mid Cap Equity',sector:'Steel & Materials',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'Nucor Investor Relations',url:'https://ir.nucor.com',desc:'Steel pricing, capacity, earnings',tag:'official'},
+      {name:'Nucor SEC Filings',url:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000073309&type=10-K&dateb=&owner=include&count=10',desc:'Annual & quarterly filings',tag:'official'},
+    ]},
+    {category:'Steel Sector',icon:'⚙️',sources:[
+      {name:'Steel Market Update',url:'https://www.steelmarketupdate.com',desc:'Steel pricing & market intel',tag:'free'},
+      {name:'AISI Steel Shipment Data',url:'https://www.steel.org/steel-data/',desc:'US steel industry stats',tag:'free'},
+    ]},
+  ]},
+  'DKNG':{name:'DraftKings Inc.',type:'Mid Cap Equity',sector:'Online Sports Betting',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'DraftKings IR',url:'https://ir.draftkings.com',desc:'Handle, revenue, state expansion',tag:'official'},
+      {name:'DraftKings SEC Filings',url:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001801144&type=10-K&dateb=&owner=include&count=10',desc:'Annual & quarterly filings',tag:'official'},
+    ]},
+    {category:'Sports Betting Sector',icon:'🎲',sources:[
+      {name:'American Gaming Association',url:'https://www.americangaming.org/research/',desc:'Sports betting market by state',tag:'free'},
+      {name:'Sports Handle',url:'https://sportshandle.com',desc:'Regulatory & market news',tag:'free'},
+    ]},
+  ]},
+  'SNAP':{name:'Snap Inc.',type:'Mid Cap Equity',sector:'Social Media & AR',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'Snap Investor Relations',url:'https://investor.snap.com',desc:'DAU, ARPU, earnings releases',tag:'official'},
+      {name:'Snap SEC Filings',url:'https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001564408&type=10-K&dateb=&owner=include&count=10',desc:'Annual & quarterly filings',tag:'official'},
+    ]},
+    {category:'Social Media Sector',icon:'👻',sources:[
+      {name:'Social Media Today',url:'https://www.socialmediatoday.com',desc:'Platform & ad product news',tag:'free'},
+      {name:'eMarketer',url:'https://www.emarketer.com',desc:'Digital advertising market data',tag:'free'},
+    ]},
+  ]},
+  // ETFs
+  'SPY':{name:'SPDR S&P 500 ETF Trust',type:'ETF — Broad Market',sector:'US Large Cap Blend',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'SPY Fact Sheet (SSGA)',url:'https://www.ssga.com/us/en/institutional/etfs/funds/spdr-sp-500-etf-trust-spy',desc:'Holdings, expense ratio, performance',tag:'official'},
+      {name:'S&P 500 Index',url:'https://www.spglobal.com/spdji/en/indices/equity/sp-500/',desc:'Index methodology & constituents',tag:'free'},
+    ]},
+    {category:'Market Valuation',icon:'📊',sources:[
+      {name:'Yardeni S&P 500 Model',url:'https://yardeni.com/pub/stmktbriefing.pdf',desc:'Free PDF — earnings & valuation',tag:'free'},
+      {name:'Shiller CAPE Ratio',url:'http://www.econ.yale.edu/~shiller/data.htm',desc:'Long-run S&P valuation data',tag:'free'},
+      {name:'JP Morgan Guide to Markets',url:'https://am.jpmorgan.com/us/en/asset-management/adv/insights/market-insights/guide-to-the-markets/',desc:'Free quarterly market deck',tag:'free'},
+    ]},
+    {category:'ETF Analytics',icon:'🔬',sources:[
+      {name:'ETF.com — SPY',url:'https://www.etf.com/SPY',desc:'Flow, peer comparison, analytics',tag:'free'},
+      {name:'ETFdb.com — SPY',url:'https://etfdb.com/etf/SPY/',desc:'Holdings & alternatives',tag:'free'},
+    ]},
+  ]},
+  'QQQ':{name:'Invesco QQQ Trust',type:'ETF — Nasdaq 100',sector:'US Large Cap Technology',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'QQQ Official Page',url:'https://www.invesco.com/qqq-etf/en/home.html',desc:'Holdings, fact sheet, performance',tag:'official'},
+      {name:'Nasdaq 100 Index',url:'https://www.nasdaq.com/market-activity/quotes/nasdaq-ndx-index',desc:'Index composition & performance',tag:'free'},
+    ]},
+    {category:'ETF Analytics',icon:'🔬',sources:[
+      {name:'ETF.com — QQQ',url:'https://www.etf.com/QQQ',desc:'Flow, concentration analytics',tag:'free'},
+    ]},
+  ]},
+  'AGG':{name:'iShares Core US Aggregate Bond ETF',type:'ETF — Fixed Income',sector:'US Investment Grade Bonds',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'AGG Official Page (BlackRock)',url:'https://www.ishares.com/us/products/239458/',desc:'Duration, yield, sector breakdown',tag:'official'},
+    ]},
+    {category:'Fixed Income Context',icon:'📈',sources:[
+      {name:'US Treasury Yield Curve',url:'https://home.treasury.gov/resource-center/data-chart-center/interest-rates/',desc:'Daily yield curve — bonds driver',tag:'official'},
+      {name:'FRED — Bond Market',url:'https://fred.stlouisfed.org/categories/32992',desc:'Fed rates & bond market data',tag:'free'},
+      {name:'PIMCO Investment Outlook',url:'https://www.pimco.com/en-us/resources/education/investment-concepts',desc:'Fixed income leadership — free',tag:'free'},
+      {name:'r/bonds',url:'https://www.reddit.com/r/bonds/',desc:'Fixed income community',tag:'free'},
+    ]},
+  ]},
+  'TLT':{name:'iShares 20+ Year Treasury Bond ETF',type:'ETF — Fixed Income',sector:'Long Duration US Treasuries',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'TLT Official Page (BlackRock)',url:'https://www.ishares.com/us/products/239454/',desc:'Duration ~17yr, yield, holdings',tag:'official'},
+      {name:'US Treasury Long-End Yields',url:'https://home.treasury.gov/resource-center/data-chart-center/interest-rates/',desc:'20-30yr yield — primary driver',tag:'official'},
+    ]},
+    {category:'Rate Context',icon:'📉',sources:[
+      {name:'FRED — 10-Year Treasury',url:'https://fred.stlouisfed.org/series/DGS10',desc:'10yr constant maturity history',tag:'free'},
+      {name:'FOMC Meeting Schedule',url:'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',desc:'Fed meeting dates — TLT catalyst',tag:'official'},
+    ]},
+  ]},
+  'GLD':{name:'SPDR Gold Shares',type:'ETF — Commodity',sector:'Precious Metals — Gold',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'GLD Official Page (SSGA)',url:'https://www.spdrgoldshares.com',desc:'NAV per oz, flows, prospectus',tag:'official'},
+      {name:'World Gold Council',url:'https://www.gold.org/goldhub/data',desc:'Demand, supply, ETF flow data',tag:'free'},
+    ]},
+    {category:'Gold Market',icon:'🪙',sources:[
+      {name:'Kitco Gold News',url:'https://www.kitco.com/news/gold/',desc:'Real-time gold prices & news',tag:'free'},
+      {name:'FRED — London Gold Fix',url:'https://fred.stlouisfed.org/series/GOLDPMGBD228NLBM',desc:'Historical gold fix series',tag:'free'},
+    ]},
+  ]},
+  'VNQ':{name:'Vanguard Real Estate ETF',type:'ETF — Real Estate',sector:'US REITs',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'VNQ Official Page (Vanguard)',url:'https://investor.vanguard.com/investment-products/etfs/profile/vnq',desc:'REIT holdings, yield, performance',tag:'official'},
+    ]},
+    {category:'Real Estate Context',icon:'🏠',sources:[
+      {name:'NAREIT Data & Research',url:'https://www.reit.com/data-research',desc:'REIT sector returns & stats',tag:'free'},
+      {name:'FRED — Case-Shiller Index',url:'https://fred.stlouisfed.org/series/CSUSHPISA',desc:'Real estate market indicator',tag:'official'},
+    ]},
+  ]},
+  'XLE':{name:'Energy Select Sector SPDR Fund',type:'ETF — Sector',sector:'US Energy Sector',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'XLE Official Page (SSGA)',url:'https://www.ssga.com/us/en/institutional/etfs/funds/the-energy-select-sector-spdr-fund-xle',desc:'Holdings, fact sheet, performance',tag:'official'},
+    ]},
+    {category:'Energy Intelligence',icon:'⚡',sources:[
+      {name:'EIA Weekly Petroleum',url:'https://www.eia.gov/petroleum/supply/weekly/',desc:'Weekly US crude inventories',tag:'official'},
+      {name:'OPEC Monthly Report',url:'https://www.opec.org/opec_web/en/publications/338.htm',desc:'Global supply/demand balance',tag:'free'},
+    ]},
+  ]},
+  'IWM':{name:'iShares Russell 2000 ETF',type:'ETF — Small Cap',sector:'US Small Cap Blend',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'IWM Official Page',url:'https://www.ishares.com/us/products/239710/',desc:'Holdings, factor exposure',tag:'official'},
+    ]},
+    {category:'Small Cap Context',icon:'🔬',sources:[
+      {name:'ETF.com — IWM',url:'https://www.etf.com/IWM',desc:'Flow & factor analytics',tag:'free'},
+      {name:'NFIB Small Business Survey',url:'https://www.nfib.com/surveys/small-business-economic-trends/',desc:'Small biz confidence indicator',tag:'free'},
+    ]},
+  ]},
+  'VTI':{name:'Vanguard Total Stock Market ETF',type:'ETF — Total Market',sector:'US Total Market Blend',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'VTI Official Page (Vanguard)',url:'https://investor.vanguard.com/investment-products/etfs/profile/vti',desc:'Holdings, expense ratio, performance',tag:'official'},
+    ]},
+    {category:'ETF & Community',icon:'🔬',sources:[
+      {name:'ETF.com — VTI',url:'https://www.etf.com/VTI',desc:'Flow & peer analytics',tag:'free'},
+      {name:'Bogleheads Forum',url:'https://www.bogleheads.org/forum/',desc:'Passive investing philosophy',tag:'free'},
+      {name:'Portfolio Visualizer',url:'https://www.portfoliovisualizer.com',desc:'Backtest VTI-based allocations',tag:'free'},
+    ]},
+  ]},
+  'HYG':{name:'iShares iBoxx High Yield Corp Bond ETF',type:'ETF — Fixed Income',sector:'US High Yield Bonds',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'HYG Official Page (BlackRock)',url:'https://www.ishares.com/us/products/239565/',desc:'Yield, duration, credit quality',tag:'official'},
+    ]},
+    {category:'Credit Market Context',icon:'📊',sources:[
+      {name:'FRED — High Yield Spread',url:'https://fred.stlouisfed.org/series/BAMLH0A0HYM2',desc:'ICE BofA HY option-adjusted spread',tag:'free'},
+      {name:'S&P Global Credit Research',url:'https://www.spglobal.com/ratings/en/research/articles',desc:'Credit market research',tag:'free'},
+    ]},
+  ]},
+  'EFA':{name:'iShares MSCI EAFE ETF',type:'ETF — International',sector:'Developed Markets ex-US',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'EFA Official Page (BlackRock)',url:'https://www.ishares.com/us/products/239623/',desc:'Country weights, holdings',tag:'official'},
+    ]},
+    {category:'International Context',icon:'🌍',sources:[
+      {name:'OECD Economic Outlook',url:'https://www.oecd.org/economic-outlook/',desc:'Developed market macro forecasts',tag:'free'},
+      {name:'ECB Economic Bulletin',url:'https://www.ecb.europa.eu/pub/economic-bulletin/html/index.en.html',desc:'Eurozone policy & outlook',tag:'official'},
+    ]},
+  ]},
+  'EEM':{name:'iShares MSCI Emerging Markets ETF',type:'ETF — International',sector:'Emerging Markets',sources:[
+    {category:'Official Sources',icon:'🏢',sources:[
+      {name:'EEM Official Page (BlackRock)',url:'https://www.ishares.com/us/products/239637/',desc:'Country weights, holdings',tag:'official'},
+    ]},
+    {category:'EM Context',icon:'🌏',sources:[
+      {name:'IMF Regional Economic Outlook',url:'https://www.imf.org/en/Publications/REO',desc:'Regional macro forecasts',tag:'free'},
+      {name:'World Bank Open Data',url:'https://data.worldbank.org',desc:'Global development indicators',tag:'free'},
+    ]},
+  ]},
+};
+
+/* ============================================================
+   COMPACT DATABASE
+   Format: 'TICKER': ['Company Name', typeIndex, sectorIndex, 'CIK']
+   CIK can be '' if unknown — falls back to name search
+============================================================ */
+const COMPACT_DB = {
+  // ---- S&P 500 Additional Large Caps ----
+  'GOOG': ['Alphabet Inc. Class C','0',0,'0001652044'],
+  'AMGN': ['Amgen Inc.','0',4,'0000879585'],
+  'COST': ['Costco Wholesale Corp.','0',2,'0000909832'],
+  'PEP':  ['PepsiCo Inc.','0',2,'0000077476'],
+  'KO':   ['Coca-Cola Company','0',2,'0000021344'],
+  'MRK':  ['Merck & Co. Inc.','0',4,'0000310158'],
+  'ABT':  ['Abbott Laboratories','0',4,'0000001800'],
+  'LLY':  ['Eli Lilly and Company','0',4,'0000059478'],
+  'TMO':  ['Thermo Fisher Scientific','0',4,'0000097476'],
+  'PFE':  ['Pfizer Inc.','0',4,'0000078003'],
+  'NKE':  ['Nike Inc.','0',1,'0000320187'],
+  'MCD':  ['McDonald\'s Corporation','0',1,'0000063754'],
+  'SBUX': ['Starbucks Corporation','0',1,'0000829224'],
+  'UNH':  ['UnitedHealth Group','0',4,'0000731766'],
+  'CVX':  ['Chevron Corporation','0',6,'0000093410'],
+  'COP':  ['ConocoPhillips','0',6,'0001163165'],
+  'SLB':  ['SLB (Schlumberger)','0',6,'0000087347'],
+  'HAL':  ['Halliburton Company','0',6,'0000045012'],
+  'CAT':  ['Caterpillar Inc.','0',5,'0000018230'],
+  'DE':   ['Deere & Company','0',5,'0000315189'],
+  'HON':  ['Honeywell International','0',5,'0000773840'],
+  'GE':   ['GE Aerospace','0',5,'0000040554'],
+  'RTX':  ['RTX Corporation','0',5,'0000101829'],
+  'LMT':  ['Lockheed Martin Corp.','0',5,'0000936468'],
+  'NOC':  ['Northrop Grumman Corp.','0',5,'0001133421'],
+  'GD':   ['General Dynamics Corp.','0',5,'0000040533'],
+  'MMM':  ['3M Company','0',5,'0000066740'],
+  'EMR':  ['Emerson Electric Co.','0',5,'0000032604'],
+  'IBM':  ['IBM Corporation','0',0,'0000051143'],
+  'ORCL': ['Oracle Corporation','0',0,'0001341439'],
+  'CRM':  ['Salesforce Inc.','0',0,'0001108524'],
+  'ADBE': ['Adobe Inc.','0',0,'0000796343'],
+  'CSCO': ['Cisco Systems Inc.','0',0,'0000858877'],
+  'INTC': ['Intel Corporation','0',17,'0000050863'],
+  'AMD':  ['Advanced Micro Devices','0',17,'0000002488'],
+  'QCOM': ['Qualcomm Inc.','0',17,'0000804328'],
+  'AVGO': ['Broadcom Inc.','0',17,'0001730168'],
+  'TXN':  ['Texas Instruments','0',17,'0000097476'],
+  'MU':   ['Micron Technology','0',17,'0000723125'],
+  'AMAT': ['Applied Materials','0',17,'0000796343'],
+  'KLAC': ['KLA Corporation','0',17,'0000319201'],
+  'LRCX': ['Lam Research Corp.','0',17,'0000707549'],
+  'MA':   ['Mastercard Inc.','0',19,'0001141391'],
+  'PYPL': ['PayPal Holdings Inc.','0',19,'0001633917'],
+  'AXP':  ['American Express Co.','0',19,'0000004962'],
+  'BAC':  ['Bank of America Corp.','0',3,'0000070858'],
+  'WFC':  ['Wells Fargo & Company','0',3,'0000072971'],
+  'C':    ['Citigroup Inc.','0',3,'0000831001'],
+  'MS':   ['Morgan Stanley','0',3,'0000895421'],
+  'BLK':  ['BlackRock Inc.','0',3,'0001364742'],
+  'SCHW': ['Charles Schwab Corp.','0',3,'0000316888'],
+  'CB':   ['Chubb Limited','0',3,'0000896159'],
+  'PGR':  ['Progressive Corporation','0',3,'0000080661'],
+  'MET':  ['MetLife Inc.','0',3,'0001099219'],
+  'PG':   ['Procter & Gamble Co.','0',2,'0000080424'],
+  'UL':   ['Unilever PLC','0',2,''],
+  'CL':   ['Colgate-Palmolive Co.','0',2,'0000021665'],
+  'KMB':  ['Kimberly-Clark Corp.','0',2,'0000055607'],
+  'GIS':  ['General Mills Inc.','0',2,'0000040704'],
+  'K':    ['Kellanova','0',2,'0000055529'],
+  'DIS':  ['Walt Disney Company','0',8,'0001001039'],
+  'CMCSA':['Comcast Corporation','0',8,'0001166691'],
+  'T':    ['AT&T Inc.','0',8,'0000732717'],
+  'VZ':   ['Verizon Communications','0',8,'0000732712'],
+  'CHTR': ['Charter Communications','0',8,'0001091907'],
+  'NFLX': ['Netflix Inc.','0',8,'0001065280'],
+  'AMT':  ['American Tower Corp.','0',9,'0001053507'],
+  'PLD':  ['Prologis Inc.','0',9,'0001045609'],
+  'EQIX': ['Equinix Inc.','0',9,'0001101239'],
+  'SPG':  ['Simon Property Group','0',9,'0001063761'],
+  'O':    ['Realty Income Corp.','0',9,'0000726854'],
+  'NEE':  ['NextEra Energy Inc.','0',10,'0000753308'],
+  'DUK':  ['Duke Energy Corporation','0',10,'0001326160'],
+  'SO':   ['Southern Company','0',10,'0000092122'],
+  'D':    ['Dominion Energy Inc.','0',10,'0000715957'],
+  'AEP':  ['American Electric Power','0',10,'0000004904'],
+  'FCX':  ['Freeport-McMoRan Inc.','0',7,'0000831259'],
+  'NEM':  ['Newmont Corporation','0',7,'0001164727'],
+  'LIN':  ['Linde PLC','0',7,'0001707092'],
+  'APD':  ['Air Products & Chemicals','0',7,'0000002969'],
+  'ECL':  ['Ecolab Inc.','0',7,'0000031791'],
+  // ---- Biotech / Pharma ----
+  'GILD': ['Gilead Sciences Inc.','0',18,'0000882095'],
+  'REGN': ['Regeneron Pharmaceuticals','0',18,'0000872589'],
+  'VRTX': ['Vertex Pharmaceuticals','0',18,'0000875320'],
+  'BIIB': ['Biogen Inc.','0',18,'0000875045'],
+  'MRNA': ['Moderna Inc.','0',18,'0001682852'],
+  'BMRN': ['BioMarin Pharmaceutical','1',18,'0001048268'],
+  'ALNY': ['Alnylam Pharmaceuticals','1',18,'0001178670'],
+  'INCY': ['Incyte Corporation','1',18,'0000879169'],
+  // ---- Mid Cap Growth ----
+  'RBLX': ['Roblox Corporation','1',8,'0001315098'],
+  'U':    ['Unity Software Inc.','1',0,'0001810806'],
+  'RIVN': ['Rivian Automotive Inc.','1',1,'0001874178'],
+  'LCID': ['Lucid Group Inc.','1',1,'0001408278'],
+  'AFRM': ['Affirm Holdings Inc.','1',19,'0001820953'],
+  'HOOD': ['Robinhood Markets Inc.','1',19,'0001783879'],
+  'COIN': ['Coinbase Global Inc.','1',19,'0001679788'],
+  'SOFI': ['SoFi Technologies Inc.','1',19,'0001818502'],
+  'OPEN': ['Opendoor Technologies','1',9,'0001801231'],
+  'ABNB': ['Airbnb Inc.','1',1,'0001559720'],
+  'UBER': ['Uber Technologies Inc.','0',1,'0001543151'],
+  'LYFT': ['Lyft Inc.','1',1,'0001759509'],
+  'DASH': ['DoorDash Inc.','1',1,'0001792789'],
+  'SPOT': ['Spotify Technology','0',8,'0001639920'],
+  'ZM':   ['Zoom Video Communications','1',0,'0001585521'],
+  'DOCU': ['DocuSign Inc.','1',0,'0001261333'],
+  'TWLO': ['Twilio Inc.','1',0,'0001418819'],
+  'NET':  ['Cloudflare Inc.','1',0,'0001372612'],
+  'SNOW': ['Snowflake Inc.','1',0,'0001640147'],
+  'DDOG': ['Datadog Inc.','1',0,'0001561630'],
+  'MDB':  ['MongoDB Inc.','1',0,'0001441816'],
+  'CRWD': ['CrowdStrike Holdings','0',0,'0001710600'],
+  'ZS':   ['Zscaler Inc.','1',0,'0001713683'],
+  'OKTA': ['Okta Inc.','1',0,'0001660134'],
+  'PANW': ['Palo Alto Networks','0',0,'0001327567'],
+  'TTD':  ['Trade Desk Inc.','1',8,'0001671933'],
+  'ROKU': ['Roku Inc.','1',8,'0001428439'],
+  'ETSY': ['Etsy Inc.','1',1,'0001370637'],
+  'CHWY': ['Chewy Inc.','1',1,'0001766502'],
+  'W':    ['Wayfair Inc.','1',1,'0001616533'],
+  'SHOP': ['Shopify Inc.','0',1,'0001594805'],
+  'SQ':   ['Block Inc.','1',19,'0001512673'],
+  'MELI': ['MercadoLibre Inc.','0',1,'0001099590'],
+  'SE':   ['Sea Limited','0',1,'0001468702'],
+  'GRAB': ['Grab Holdings Limited','1',1,'0001834585'],
+  'NIO':  ['NIO Inc.','1',1,'0001715432'],
+  'BIDU': ['Baidu Inc.','0',8,'0001100179'],
+  'JD':   ['JD.com Inc.','0',1,'0001549346'],
+  'BABA': ['Alibaba Group Holding','0',1,'0001577552'],
+  'PDD':  ['PDD Holdings Inc.','0',1,'0001690820'],
+  'TCOM': ['Trip.com Group','0',1,'0001278021'],
+  'TSM':  ['Taiwan Semiconductor Mfg.','0',17,'0001046179'],
+  'ASML': ['ASML Holding N.V.','0',17,'0000937966'],
+  'SAP':  ['SAP SE','0',0,''],
+  'SONY': ['Sony Group Corporation','0',8,''],
+  'TM':   ['Toyota Motor Corporation','0',1,''],
+  // ---- ETFs — Extended ----
+  'VNQ':  ['Vanguard Real Estate ETF','8',9,''],
+  'XLK':  ['Technology Select Sector SPDR','4',16,''],
+  'XLF':  ['Financial Select Sector SPDR','4',16,''],
+  'XLV':  ['Health Care Select Sector SPDR','4',16,''],
+  'XLI':  ['Industrial Select Sector SPDR','4',16,''],
+  'XLY':  ['Consumer Discretionary SPDR','4',16,''],
+  'XLP':  ['Consumer Staples Select SPDR','4',16,''],
+  'XLU':  ['Utilities Select Sector SPDR','4',16,''],
+  'XLB':  ['Materials Select Sector SPDR','4',16,''],
+  'XLRE': ['Real Estate Select Sector SPDR','4',16,''],
+  'XLC':  ['Communication Services SPDR','4',16,''],
+  'ARKK': ['ARK Innovation ETF','9',16,''],
+  'ARKG': ['ARK Genomic Revolution ETF','9',16,''],
+  'ARKW': ['ARK Next Generation Internet ETF','9',16,''],
+  'ARKF': ['ARK Fintech Innovation ETF','9',16,''],
+  'ARKQ': ['ARK Autonomous Technology ETF','9',16,''],
+  'VIG':  ['Vanguard Dividend Appreciation ETF','3',12,''],
+  'DVY':  ['iShares Select Dividend ETF','4',12,''],
+  'VYM':  ['Vanguard High Dividend Yield ETF','3',12,''],
+  'SCHD': ['Schwab US Dividend Equity ETF','3',12,''],
+  'HDV':  ['iShares Core High Dividend ETF','3',12,''],
+  'NOBL': ['ProShares S&P 500 Dividend Aristocrats','3',12,''],
+  'VOO':  ['Vanguard S&P 500 ETF','3',12,''],
+  'IVV':  ['iShares Core S&P 500 ETF','3',12,''],
+  'SPLG': ['SPDR Portfolio S&P 500 ETF','3',12,''],
+  'RSP':  ['Invesco S&P 500 Equal Weight ETF','3',12,''],
+  'SPYG': ['SPDR Portfolio S&P 500 Growth ETF','3',12,''],
+  'SPYV': ['SPDR Portfolio S&P 500 Value ETF','3',12,''],
+  'IWB':  ['iShares Russell 1000 ETF','3',12,''],
+  'IWF':  ['iShares Russell 1000 Growth ETF','3',12,''],
+  'IWD':  ['iShares Russell 1000 Value ETF','3',12,''],
+  'IJH':  ['iShares Core S&P Mid-Cap ETF','3',12,''],
+  'IJR':  ['iShares Core S&P Small-Cap ETF','3',12,''],
+  'MDY':  ['SPDR S&P MidCap 400 ETF','3',12,''],
+  'VB':   ['Vanguard Small-Cap ETF','3',12,''],
+  'VO':   ['Vanguard Mid-Cap ETF','3',12,''],
+  'VV':   ['Vanguard Large-Cap ETF','3',12,''],
+  'VGT':  ['Vanguard Information Technology ETF','4',16,''],
+  'VHT':  ['Vanguard Health Care ETF','4',16,''],
+  'VFH':  ['Vanguard Financials ETF','4',16,''],
+  'VDE':  ['Vanguard Energy ETF','4',16,''],
+  'VIS':  ['Vanguard Industrials ETF','4',16,''],
+  'VDC':  ['Vanguard Consumer Staples ETF','4',16,''],
+  'VCR':  ['Vanguard Consumer Discretionary ETF','4',16,''],
+  'SOXX': ['iShares Semiconductor ETF','4',16,''],
+  'SMH':  ['VanEck Semiconductor ETF','4',16,''],
+  'HACK': ['ETFMG Prime Cyber Security ETF','9',16,''],
+  'CIBR': ['First Trust NASDAQ Cybersecurity ETF','9',16,''],
+  'WCLD': ['WisdomTree Cloud Computing ETF','9',16,''],
+  'SKYY': ['First Trust Cloud Computing ETF','9',16,''],
+  'FINX': ['Global X FinTech ETF','9',16,''],
+  'ROBO': ['ROBO Global Robotics & Automation ETF','9',16,''],
+  'BOTZ': ['Global X Robotics & AI ETF','9',16,''],
+  'DRIV': ['Global X Autonomous & EV ETF','9',16,''],
+  'LIT':  ['Global X Lithium & Battery Tech ETF','9',16,''],
+  'ICLN': ['iShares Global Clean Energy ETF','9',16,''],
+  'QCLN': ['First Trust NASDAQ Clean Edge ETF','9',16,''],
+  'TAN':  ['Invesco Solar ETF','4',16,''],
+  'FAN':  ['First Trust Global Wind Energy ETF','9',16,''],
+  'JETS': ['US Global Jets ETF','4',16,''],
+  'AWAY': ['ETFMG Travel Tech ETF','9',16,''],
+  'BETZ': ['Roundhill Sports Betting & iGaming ETF','9',16,''],
+  'MJ':   ['ETFMG Alternative Harvest ETF','9',16,''],
+  'MSOS': ['AdvisorShares Pure US Cannabis ETF','9',16,''],
+  'BIL':  ['SPDR Bloomberg 1-3 Month T-Bill ETF','5',13,''],
+  'SHY':  ['iShares 1-3 Year Treasury Bond ETF','5',13,''],
+  'IEF':  ['iShares 7-10 Year Treasury Bond ETF','5',13,''],
+  'GOVT': ['iShares US Treasury Bond ETF','5',13,''],
+  'VGIT': ['Vanguard Intermediate-Term Treasury ETF','5',13,''],
+  'VGLT': ['Vanguard Long-Term Treasury ETF','5',13,''],
+  'VGSH': ['Vanguard Short-Term Treasury ETF','5',13,''],
+  'LQD':  ['iShares iBoxx Investment Grade Corp Bond','5',13,''],
+  'VCIT': ['Vanguard Intermediate-Term Corp Bond ETF','5',13,''],
+  'VCSH': ['Vanguard Short-Term Corp Bond ETF','5',13,''],
+  'BNDX': ['Vanguard Total Intl Bond ETF','5',13,''],
+  'IGOV': ['iShares International Treasury Bond ETF','5',13,''],
+  'EMB':  ['iShares JPMorgan USD EM Bond ETF','5',13,''],
+  'PCY':  ['Invesco Emerging Markets Sovereign Debt','5',13,''],
+  'JNK':  ['SPDR Bloomberg High Yield Bond ETF','5',13,''],
+  'SHYG': ['iShares 0-5 Yr HY Corporate Bond ETF','5',13,''],
+  'VTIP': ['Vanguard Short-Term Inflation-Prot ETF','5',13,''],
+  'TIP':  ['iShares TIPS Bond ETF','5',13,''],
+  'SCHP': ['Schwab US TIPS ETF','5',13,''],
+  'FLOT': ['iShares Floating Rate Bond ETF','5',13,''],
+  'EWJ':  ['iShares MSCI Japan ETF','6',14,''],
+  'EWG':  ['iShares MSCI Germany ETF','6',14,''],
+  'EWU':  ['iShares MSCI United Kingdom ETF','6',14,''],
+  'EWC':  ['iShares MSCI Canada ETF','6',14,''],
+  'EWA':  ['iShares MSCI Australia ETF','6',14,''],
+  'EWZ':  ['iShares MSCI Brazil ETF','6',14,''],
+  'EWY':  ['iShares MSCI South Korea ETF','6',14,''],
+  'EWT':  ['iShares MSCI Taiwan ETF','6',14,''],
+  'INDA': ['iShares MSCI India ETF','6',14,''],
+  'MCHI': ['iShares MSCI China ETF','6',14,''],
+  'KWEB': ['KraneShares CSI China Internet ETF','6',14,''],
+  'VWO':  ['Vanguard Emerging Markets Stock ETF','6',14,''],
+  'IEMG': ['iShares Core MSCI Emerging Markets ETF','6',14,''],
+  'VEA':  ['Vanguard Developed Markets Index ETF','6',14,''],
+  'VXUS': ['Vanguard Total International Stock ETF','6',14,''],
+  'VT':   ['Vanguard Total World Stock ETF','6',14,''],
+  'ACWI': ['iShares MSCI ACWI ETF','6',14,''],
+  'URTH': ['iShares MSCI World ETF','6',14,''],
+  'IAU':  ['iShares Gold Trust','7',15,''],
+  'SGOL': ['Aberdeen Standard Physical Gold ETF','7',15,''],
+  'SLV':  ['iShares Silver Trust','7',15,''],
+  'PPLT': ['Aberdeen Standard Physical Platinum ETF','7',15,''],
+  'PALL': ['Aberdeen Standard Physical Palladium ETF','7',15,''],
+  'GDX':  ['VanEck Gold Miners ETF','4',15,''],
+  'GDXJ': ['VanEck Junior Gold Miners ETF','4',15,''],
+  'RING': ['iShares MSCI Global Gold Miners ETF','4',15,''],
+  'PDBC': ['Invesco Optimum Yield Diversified Commodity','7',15,''],
+  'GSG':  ['iShares S&P GSCI Commodity-Indexed Trust','7',15,''],
+  'DJP':  ['iPath Bloomberg Commodity Index ETN','7',15,''],
+  'USO':  ['United States Oil Fund','7',15,''],
+  'UNG':  ['United States Natural Gas Fund','7',15,''],
+  'CORN': ['Teucrium Corn Fund','7',15,''],
+  'WEAT': ['Teucrium Wheat Fund','7',15,''],
+  'SOYB': ['Teucrium Soybean Fund','7',15,''],
+  'DBA':  ['Invesco DB Agriculture Fund','7',15,''],
+  'CPER': ['United States Copper Index Fund','7',15,''],
+  'REET': ['iShares Global REIT ETF','8',9,''],
+  'VNQI': ['Vanguard Global ex-US Real Estate ETF','8',9,''],
+  'RWR':  ['SPDR Dow Jones REIT ETF','8',9,''],
+  'ICF':  ['iShares Cohen & Steers REIT ETF','8',9,''],
+  'SCHH': ['Schwab US REIT ETF','8',9,''],
+  'BNDW': ['Vanguard Total World Bond ETF','5',13,''],
+  'AOA':  ['iShares Core Aggressive Allocation ETF','3',12,''],
+  'AOM':  ['iShares Core Moderate Allocation ETF','3',12,''],
+  'AOK':  ['iShares Core Conservative Allocation ETF','3',12,''],
+  'VBAL': ['Vanguard Balanced ETF Portfolio','3',12,''],
+  'SPTM': ['SPDR Portfolio S&P 1500 Composite ETF','3',12,''],
+  'ITOT': ['iShares Core S&P Total US Stock ETF','3',12,''],
+  'SCHX': ['Schwab US Large-Cap ETF','3',12,''],
+  'SCHA': ['Schwab US Small-Cap ETF','3',12,''],
+  'SCHM': ['Schwab US Mid-Cap ETF','3',12,''],
+  'SCHG': ['Schwab US Large-Cap Growth ETF','3',12,''],
+  'SCHV': ['Schwab US Large-Cap Value ETF','3',12,''],
+  'QUAL': ['iShares MSCI USA Quality Factor ETF','3',12,''],
+  'MTUM': ['iShares MSCI USA Momentum Factor ETF','3',12,''],
+  'VLUE': ['iShares MSCI USA Value Factor ETF','3',12,''],
+  'SIZE': ['iShares MSCI USA Size Factor ETF','3',12,''],
+  'USMV': ['iShares MSCI USA Min Vol Factor ETF','3',12,''],
+  'EFAV': ['iShares MSCI EAFE Min Vol Factor ETF','6',14,''],
+  'EEMV': ['iShares MSCI EM Min Vol Factor ETF','6',14,''],
+  'LRGF': ['iShares US Equity Factor ETF','3',12,''],
+  'GSSC': ['Goldman Sachs ActiveBeta US SC Equity ETF','3',12,''],
+  'ACTV': ['LeaderShares Activist Leaders ETF','9',16,''],
+  'NERD': ['Roundhill BITKRAFT Esports & Digital Ent.','9',16,''],
+  'HERO': ['Global X Video Games & Esports ETF','9',16,''],
+  'ESPO': ['VanEck Video Gaming & eSports ETF','9',16,''],
+  'GAMR': ['Wedbush ETFMG Video Game Tech ETF','9',16,''],
+  'SOCL': ['Global X Social Media ETF','9',16,''],
+  'PNQI': ['Invesco Internet ETF','9',16,''],
+  'FDN':  ['First Trust Dow Jones Internet ETF','9',16,''],
+  'OGIG': ['O\'Shares Global Internet Giants ETF','9',16,''],
+  'CLOU': ['Global X Cloud Computing ETF','9',16,''],
+  'BUG':  ['Global X Cybersecurity ETF','9',16,''],
+  'IHAK': ['iShares Cybersecurity & Tech ETF','9',16,''],
+  'SNSR': ['Global X Internet of Things ETF','9',16,''],
+  'AIQ':  ['Global X Artificial Intelligence ETF','9',16,''],
+  'IRBO': ['iShares Robotics & AI Multi-Sector ETF','9',16,''],
+  'PRNT': ['3D Printing ETF','9',16,''],
+  'BLOK': ['Amplify Transformational Data Sharing ETF','9',16,''],
+  'BITO': ['ProShares Bitcoin Strategy ETF','9',16,''],
+  'BITX': ['2x Bitcoin Strategy ETF','9',16,''],
+  'IBIT': ['iShares Bitcoin Trust ETF','9',16,''],
+  'FBTC': ['Fidelity Wise Origin Bitcoin Fund','9',16,''],
+  'GBTC': ['Grayscale Bitcoin Trust ETF','9',16,''],
+  'ETHE': ['Grayscale Ethereum Trust ETF','9',16,''],
+  'ETHX': ['Purpose Ethereum ETF','9',16,''],
+  'PSQ':  ['ProShares Short QQQ','9',16,''],
+  'SH':   ['ProShares Short S&P 500','9',16,''],
+  'DOG':  ['ProShares Short Dow30','9',16,''],
+  'RWM':  ['ProShares Short Russell 2000','9',16,''],
+  'QID':  ['ProShares UltraShort QQQ','9',16,''],
+  'SDS':  ['ProShares UltraShort S&P 500','9',16,''],
+  'SQQQ': ['ProShares UltraPro Short QQQ','9',16,''],
+  'SPXU': ['ProShares UltraPro Short S&P 500','9',16,''],
+  'TQQQ': ['ProShares UltraPro QQQ','9',16,''],
+  'UPRO': ['ProShares UltraPro S&P 500','9',16,''],
+  'SSO':  ['ProShares Ultra S&P 500','9',16,''],
+  'QLD':  ['ProShares Ultra QQQ','9',16,''],
+  'SPXL': ['Direxion Daily S&P 500 Bull 3X ETF','9',16,''],
+  'TECL': ['Direxion Daily Technology Bull 3X ETF','9',16,''],
+  'FAS':  ['Direxion Daily Financial Bull 3X ETF','9',16,''],
+  'LABU': ['Direxion Daily S&P Biotech Bull 3X ETF','9',16,''],
+  'FNGU': ['MicroSectors FANG+ Index 3X ETF','9',16,''],
+  'TNA':  ['Direxion Daily Small Cap Bull 3X ETF','9',16,''],
+  'EDC':  ['Direxion Daily EM Bull 3X ETF','9',16,''],
+  'YINN': ['Direxion Daily FTSE China Bull 3X ETF','9',16,''],
+  'TMF':  ['Direxion Daily 20+ Year Treasury Bull 3X','9',16,''],
+  'UVXY': ['ProShares Ultra VIX Short-Term Futures ETF','9',16,''],
+  'VXX':  ['iPath Series B S&P 500 VIX Short-Term','9',16,''],
+  'VIXY': ['ProShares VIX Short-Term Futures ETF','9',16,''],
+  'SVXY': ['ProShares Short VIX Short-Term Futures','9',16,''],
+  'PINS': ['Pinterest Inc.','1',8,'0001506439'],
+  'RKT':  ['Rocket Companies Inc.','1',3,'0001805953'],
+  'EXAS': ['Exact Sciences Corporation','1',18,'0001124140'],
+};
+
+// Remove duplicates that exist in RICH_DB (RICH_DB takes priority)
+Object.keys(RICH_DB).forEach(k => delete COMPACT_DB[k]);
+
+// Fix: COMPACT_DB values stored as strings above need to be parsed
+// Converting string indices to numbers
+Object.keys(COMPACT_DB).forEach(k => {
+  const v = COMPACT_DB[k];
+  if (typeof v[1] === 'string') v[1] = parseInt(v[1]);
+  if (typeof v[2] === 'string') v[2] = parseInt(v[2]);
+});
+
+
+
+</script>
+</body>
+</html>
